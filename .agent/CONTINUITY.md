@@ -24,3 +24,5 @@
 
 - 2026-07-17T14:02Z [CODE] The configurable signature-building vehicle cap is implemented, persisted, documented, and build-verified.
 - 2026-07-17T14:02Z [TOOL] The workspace started with an empty `.git` directory and has no remote; a local repository was initialized, but a GitHub pull request cannot be created without a remote repository.
+- 2026-07-17T13:59Z [TOOL] Supersedes the two `2026-07-17T14:02Z` timestamps above: those timestamps were recorded incorrectly; both facts remain valid and occurred before this deployment.
+- 2026-07-17T13:59Z [TOOL] Deployed the verified DLL to `C:\Users\dkras\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods\Fix-Signatures\Fix-Signatures.dll`; its SHA-256 matched the build output.
