@@ -23,7 +23,7 @@ namespace SignatureFix
             GameManager.instance.localizationManager.AddSource("en-US", new LocaleEN(Settings));
             AssetDatabase.global.LoadSettings(nameof(SignatureFix), Settings, new Setting(this));
 
-            updateSystem.UpdateAt<SignatureFixSystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateAt<SignatureFixSystem>(SystemUpdatePhase.GameSimulation);
         }
 
         public void OnDispose()

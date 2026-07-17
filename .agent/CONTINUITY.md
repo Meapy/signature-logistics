@@ -8,6 +8,7 @@
 
 - 2026-07-17T13:38Z [CODE] Patch only `TransportCompanyData.m_MaxTransports` on prefabs containing both `SignatureBuildingData` and `TransportCompanyData`; this is the game-owned limit consumed by simulation and UI code.
 - 2026-07-17T13:38Z [ASSUMPTION] Keep the vanilla value 5 as the default and expose a 1-100 options slider to avoid changing gameplay until the player chooses a new value.
+- 2026-07-17T14:15Z [CODE] Run `SignatureFixSystem` in `GameSimulation`, after prefab component initialization, while retaining the value-change guard so the per-frame phase adds no repeated writes.
 
 [PROGRESS]
 
@@ -19,6 +20,7 @@
 
 - 2026-07-17T13:38Z [TOOL] Inspection of the installed `Game.dll` showed `ProcessingCompany.Initialize` copies `ProcessingCompany.transports` to `TransportCompanyData.m_MaxTransports`; delivery pathfinding and vehicle UI read that component as the cap.
 - 2026-07-17T13:38Z [TOOL] The local `CSII_TOOLPATH` user environment variable is unset; the installed toolchain is under the game's `.ModdingToolchain` directory.
+- 2026-07-17T14:15Z [TOOL] The game loaded the original DLL but emitted no patch-count log; `PrefabUpdate` ran before `ProcessingCompany.Initialize` materialized `TransportCompanyData`, so `RequireForUpdate` prevented the system from running.
 
 [OUTCOMES]
 
@@ -26,3 +28,4 @@
 - 2026-07-17T14:02Z [TOOL] The workspace started with an empty `.git` directory and has no remote; a local repository was initialized, but a GitHub pull request cannot be created without a remote repository.
 - 2026-07-17T13:59Z [TOOL] Supersedes the two `2026-07-17T14:02Z` timestamps above: those timestamps were recorded incorrectly; both facts remain valid and occurred before this deployment.
 - 2026-07-17T13:59Z [TOOL] Deployed the verified DLL to `C:\Users\dkras\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods\Fix-Signatures\Fix-Signatures.dll`; its SHA-256 matched the build output.
+- 2026-07-17T14:15Z [TOOL] Rebuilt the timing fix with 0 warnings/errors and redeployed a hash-matching DLL; an in-game restart/retest remains pending.
