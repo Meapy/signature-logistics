@@ -18,8 +18,8 @@ namespace SignatureFix
         private EntityQuery m_SignatureBuildings;
         private VehicleCapacitySystem m_VehicleCapacitySystem;
 
-        // Match ResourceBuyerSystem so every scan can be consumed without per-frame polling.
-        public override int GetUpdateInterval(SystemUpdatePhase phase) => 16;
+        // ponytail: still 4x faster than vanilla company buying; add per-company failure backoff only if profiling justifies its state.
+        public override int GetUpdateInterval(SystemUpdatePhase phase) => 64;
 
         [Preserve]
         protected override void OnCreate()
@@ -123,8 +123,8 @@ namespace SignatureFix
             int availableAmount = int.MaxValue;
 
             // ponytail: two inputs are the native process limit, so a tiny direct comparison is clearer than a collection.
-            SelectLowerStockInput(company, process.m_Input1.m_Resource, ref resource, ref availableAmount, ref deliveryTrucks, ref layouts);
-            SelectLowerStockInput(company, process.m_Input2.m_Resource, ref resource, ref availableAmount, ref deliveryTrucks, ref layouts);
+            SelectLowerStockInput(company, process.m_Input1.m_Resource, targetAmount, ref resource, ref availableAmount, ref deliveryTrucks, ref layouts);
+            SelectLowerStockInput(company, process.m_Input2.m_Resource, targetAmount, ref resource, ref availableAmount, ref deliveryTrucks, ref layouts);
             if (resource == Resource.NoResource || availableAmount >= targetAmount)
                 return false;
 
@@ -147,6 +147,7 @@ namespace SignatureFix
         private void SelectLowerStockInput(
             Entity company,
             Resource candidate,
+            int targetAmount,
             ref Resource selected,
             ref int selectedAmount,
             ref ComponentLookup<Game.Vehicles.DeliveryTruck> deliveryTrucks,
@@ -156,6 +157,9 @@ namespace SignatureFix
                 return;
 
             int amount = EconomyUtils.GetResources(candidate, EntityManager.GetBuffer<Resources>(company, true));
+            if (amount >= targetAmount)
+                return;
+
             foreach (TripNeeded trip in EntityManager.GetBuffer<TripNeeded>(company, true))
             {
                 if ((trip.m_Purpose == Purpose.Shopping || trip.m_Purpose == Purpose.CompanyShopping) && trip.m_Resource == candidate)
