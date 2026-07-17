@@ -7,6 +7,7 @@
 - 2026-07-17T15:02Z [USER] Review and improve pathfinding-related efficiency and performance.
 - 2026-07-17T15:09Z [USER] Analyze the installed game's actual pathfinding/buyer code and apply further safe optimizations in the mod.
 - 2026-07-17T15:20Z [USER] Persist all slider changes across game restarts.
+- 2026-07-17T16:10Z [USER] Show each active delivery vehicle's cargo and distance to its destination on the existing Vehicles in use row.
 
 [DECISIONS]
 
@@ -21,6 +22,8 @@
 - 2026-07-17T15:02Z [CODE] Match `SignatureFixSystem` to the native `ResourceBuyerSystem` 16-tick update interval, preserving purchase responsiveness while eliminating per-frame polling.
 - 2026-07-17T15:09Z [CODE] Supersedes the 16-tick decision above: run priority restocking every 64 ticks, still 4x more often than vanilla company buying, to reduce both steady-state scans and repeated failed path searches without adding per-company retry state.
 - 2026-07-17T15:20Z [CODE] Rename the generic `Setting` type to unique `SignatureFixSettings` while preserving `[FileLocation("SignatureFix")]` and property names, avoiding cross-mod save lookup collisions without migrating the existing file.
+- 2026-07-17T16:10Z [CODE] Preserve the native `VehicleItem` row and state link, append localized cargo/capacity and distance through the official UI module registry, and publish selected-company details through a throttled managed binding.
+- 2026-07-17T16:10Z [CODE] Report straight-line world distance to the current `VehicleUIUtils` destination; exact road-route distance is not maintained by the game as a decrementing UI value and would require walking live path/lane geometry.
 
 [PROGRESS]
 
@@ -31,6 +34,7 @@
 - 2026-07-17T15:02Z [CODE] Reduced signature scans and their resource/trip/vehicle-buffer reads from every tick to once per 16 ticks.
 - 2026-07-17T15:09Z [CODE] Reduced scans again from every 16 to every 64 ticks and added a current-stock early return before pending-trip and owned-vehicle buffer walks.
 - 2026-07-17T15:20Z [CODE] Updated all settings references and documentation; automatic native slider `ApplyAndSave` now resolves the unique settings type.
+- 2026-07-17T16:10Z [CODE] Added `VehicleDetailsUISystem`, a minimal JS/CSS vehicle-row extension, pinned UI build tooling, a built-bundle smoke test, local container recipe, and updated usage/publishing documentation.
 
 [DISCOVERIES]
 
@@ -43,6 +47,8 @@
 - 2026-07-17T15:02Z [TOOL] `ResourceBuyerSystem.GetUpdateInterval` returns 16 while `BuyingCompanySystem` returns 256; the mod's previous default interval was 1, causing 16 scans per native purchase-processing opportunity.
 - 2026-07-17T15:09Z [TOOL] Installed `Game.dll` shows `ResourceBuyerSystem.HandleBuyersJob` is Burst-compiled and scheduled with `ScheduleParallel`; it enqueues native path searches and removes failed company requests without company-level retry backoff, so an aggressive mod can otherwise resubmit failures every buyer cycle.
 - 2026-07-17T15:20Z [TOOL] Installed game IL shows every int slider calls `Setting.ApplyAndSave`, which calls `SaveSpecificSetting(GetType().Name)`; AssetDatabase then matches only `fragment.source.GetType().Name`, so generic mod classes named `Setting` collide. Existing `SignatureFix.coc` was last written at 2026-07-17T14:14:28Z and contained only `MaxVehicles: 20`.
+- 2026-07-17T16:10Z [TOOL] Installed game code shows `VehiclesSection` serializes only entity/name/type/state; its frontend `VehicleItem` is an overridable module-registry export, so extra fields require a mod binding plus UI override rather than a hidden native option.
+- 2026-07-17T16:10Z [TOOL] Native cargo UI sums loaded `DeliveryTruck.m_Amount` across `LayoutElement` vehicles and capacity comes from each prefab's `DeliveryTruckData.m_CargoCapacity`; the mod mirrors that behavior and uses the game's localized Weight and Length formatters.
 
 [OUTCOMES]
 
@@ -57,3 +63,4 @@
 - 2026-07-17T15:02Z [TOOL] The 16-tick scheduling optimization builds with 0 warnings/errors; built IL confirms the override returns 16. Deployed the 13,824-byte DLL and verified SHA-256 `741A93525AC908D287616E3FB4DC8ECB490207A0B0417177D7E650D400F2AE27`; restart/retest remains pending.
 - 2026-07-17T15:09Z [TOOL] The deeper optimization builds with 0 warnings/errors; built IL confirms a 64-tick interval and that current-stock comparison returns before trip-buffer access. Deployed the 13,824-byte DLL and verified SHA-256 `AA772DF412E3252CF542B6A26B42A24D77CE086BE7120D5C0D5B5EBE986031ED`; restart/in-game profiling remains pending.
 - 2026-07-17T15:20Z [TOOL] Persistence fix builds with 0 warnings/errors; compiled metadata confirms unique `SignatureFix.SignatureFixSettings`, no legacy generic type, file location `SignatureFix`, and all three persisted properties. Deployed the 13,824-byte DLL and verified SHA-256 `CC30084FAFC713AB7901CF86AF45EB2FFD3C3D1D2652228645BECC1F19FD0834`; restart/save verification remains pending.
+- 2026-07-17T16:10Z [TOOL] Vehicle-detail feature builds with 0 C# warnings/errors; the UI webpack build and bundle-level row-extension smoke test pass. Deployed matching `Fix-Signatures.dll` (SHA-256 `9F8A1A5B2480F87F4E0896C5C9F3F82432611525DDACE53CDE06612C2772A9A3`), JS (`375E87D03894B3076FB14DB7CE8F1160DD62D20A5F905DF2CE4BB1C405BD8B29`), and CSS (`4C97F848A7F1A21347DC72E11F2ADF9FDB9E4C6F2A50DB5DBFD16CC7589BC9DB`) to the local game mod folder; restart/in-game visual verification remains pending.

@@ -4,11 +4,11 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Fix Signatures" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Choose vehicle and storage limits for signature buildings." />
+	<ShortDescription Value="Configure signature industries and inspect active delivery vehicles." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-Adds vehicle and storage sliders under Options &gt; Fix Signatures. The selected limits apply to signature buildings during gameplay, including existing buildings.
+Adds vehicle, storage, and input-restocking sliders under Options &gt; Fix Signatures. The selected limits apply to existing and newly placed signature buildings. Expanded vehicle rows show each delivery vehicle's cargo and approximate distance to its destination.
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail.png" />

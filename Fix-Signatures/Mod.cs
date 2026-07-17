@@ -4,6 +4,7 @@ using Game;
 using Game.Modding;
 using Game.SceneFlow;
 using Game.Simulation;
+using Game.UI;
 
 namespace SignatureFix
 {
@@ -25,6 +26,7 @@ namespace SignatureFix
             AssetDatabase.global.LoadSettings(nameof(SignatureFix), Settings, new SignatureFixSettings(this));
 
             updateSystem.UpdateBefore<SignatureFixSystem, ResourceBuyerSystem>(SystemUpdatePhase.GameSimulation);
+            updateSystem.UpdateAt<VehicleDetailsUISystem>(SystemUpdatePhase.UIUpdate);
         }
 
         public void OnDispose()
