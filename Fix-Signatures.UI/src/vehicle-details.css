@@ -1,9 +1,12 @@
-.details {
+.cargo,
+.status {
   display: inline-flex;
   align-items: center;
   gap: 4rem;
-  margin-left: 6rem;
   white-space: nowrap;
+}
+
+.cargo {
   color: rgba(255, 255, 255, 0.78);
 }
 

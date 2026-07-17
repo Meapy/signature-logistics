@@ -51,6 +51,6 @@ const row = extendVehicleItem(OriginalVehicleItem)({ vehicle: { entity } });
 const linkChildren = row.props.link.props.children;
 
 assert.equal(row.props.noShrinkRight, true);
-assert.equal(linkChildren[0], "Buying");
-assert.equal(linkChildren[1].props.children[1].type, "LocalizedFraction");
-assert.equal(linkChildren[1].props.children[2].props.children[1].type, "LocalizedNumber");
+assert.equal(row.props.center.props.children[1].type, "LocalizedFraction");
+assert.equal(linkChildren.props.children[0], "Buying");
+assert.equal(linkChildren.props.children[1].props.children[1].type, "LocalizedNumber");

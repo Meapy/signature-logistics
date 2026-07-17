@@ -21,22 +21,26 @@ export default function register(moduleRegistry) {
       return originalRow;
 
     const originalLink = originalRow.props.link;
+    const cargo = React.createElement(
+      "span",
+      { className: styles.cargo },
+      detail.resource && React.createElement("img", {
+        className: styles.resourceIcon,
+        src: `Media/Game/Resources/${detail.resource}.svg`
+      }),
+      React.createElement(LocalizedFraction, {
+        value: detail.cargo,
+        total: detail.capacity,
+        unit: Unit.Weight
+      })
+    );
     const enhancedLink = React.cloneElement(
       originalLink,
       undefined,
-      originalLink.props.children,
       React.createElement(
         "span",
-        { className: styles.details },
-        detail.resource && React.createElement("img", {
-          className: styles.resourceIcon,
-          src: `Media/Game/Resources/${detail.resource}.svg`
-        }),
-        React.createElement(LocalizedFraction, {
-          value: detail.cargo,
-          total: detail.capacity,
-          unit: Unit.Weight
-        }),
+        { className: styles.status },
+        originalLink.props.children,
         detail.distance >= 0 && React.createElement(
           React.Fragment,
           null,
@@ -46,6 +50,6 @@ export default function register(moduleRegistry) {
       )
     );
 
-    return React.cloneElement(originalRow, { link: enhancedLink, noShrinkRight: true });
+    return React.cloneElement(originalRow, { center: cargo, link: enhancedLink, noShrinkRight: true });
   });
 }
