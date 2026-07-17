@@ -6,6 +6,7 @@
 - 2026-07-17T14:53Z [USER] Keep signature manufacturing buildings supplied more aggressively so production does not routinely stop for missing inputs.
 - 2026-07-17T15:02Z [USER] Review and improve pathfinding-related efficiency and performance.
 - 2026-07-17T15:09Z [USER] Analyze the installed game's actual pathfinding/buyer code and apply further safe optimizations in the mod.
+- 2026-07-17T15:20Z [USER] Persist all slider changes across game restarts.
 
 [DECISIONS]
 
@@ -19,6 +20,7 @@
 - 2026-07-17T14:53Z [CODE] Use the game's native `ResourceBuyer` route with local-industrial and import targets; default the configurable input target to 75% of each resource's storage share and count pending trips plus cargo already inbound before ordering.
 - 2026-07-17T15:02Z [CODE] Match `SignatureFixSystem` to the native `ResourceBuyerSystem` 16-tick update interval, preserving purchase responsiveness while eliminating per-frame polling.
 - 2026-07-17T15:09Z [CODE] Supersedes the 16-tick decision above: run priority restocking every 64 ticks, still 4x more often than vanilla company buying, to reduce both steady-state scans and repeated failed path searches without adding per-company retry state.
+- 2026-07-17T15:20Z [CODE] Rename the generic `Setting` type to unique `SignatureFixSettings` while preserving `[FileLocation("SignatureFix")]` and property names, avoiding cross-mod save lookup collisions without migrating the existing file.
 
 [PROGRESS]
 
@@ -28,6 +30,7 @@
 - 2026-07-17T14:53Z [CODE] Added per-company lowest-input selection, one-truck-at-a-time priority purchasing, a 25-100% restock slider, and usage documentation.
 - 2026-07-17T15:02Z [CODE] Reduced signature scans and their resource/trip/vehicle-buffer reads from every tick to once per 16 ticks.
 - 2026-07-17T15:09Z [CODE] Reduced scans again from every 16 to every 64 ticks and added a current-stock early return before pending-trip and owned-vehicle buffer walks.
+- 2026-07-17T15:20Z [CODE] Updated all settings references and documentation; automatic native slider `ApplyAndSave` now resolves the unique settings type.
 
 [DISCOVERIES]
 
@@ -39,6 +42,7 @@
 - 2026-07-17T14:53Z [TOOL] Game IL shows vanilla company buying waits until an input falls below 25% of its storage share and normally issues one request at a time; `ResourceBuyerSystem` accepts `Industrial | Import`, creates a normal paid shopping trip, and imports through an outside connection when appropriate.
 - 2026-07-17T15:02Z [TOOL] `ResourceBuyerSystem.GetUpdateInterval` returns 16 while `BuyingCompanySystem` returns 256; the mod's previous default interval was 1, causing 16 scans per native purchase-processing opportunity.
 - 2026-07-17T15:09Z [TOOL] Installed `Game.dll` shows `ResourceBuyerSystem.HandleBuyersJob` is Burst-compiled and scheduled with `ScheduleParallel`; it enqueues native path searches and removes failed company requests without company-level retry backoff, so an aggressive mod can otherwise resubmit failures every buyer cycle.
+- 2026-07-17T15:20Z [TOOL] Installed game IL shows every int slider calls `Setting.ApplyAndSave`, which calls `SaveSpecificSetting(GetType().Name)`; AssetDatabase then matches only `fragment.source.GetType().Name`, so generic mod classes named `Setting` collide. Existing `SignatureFix.coc` was last written at 2026-07-17T14:14:28Z and contained only `MaxVehicles: 20`.
 
 [OUTCOMES]
 
@@ -52,3 +56,4 @@
 - 2026-07-17T14:53Z [TOOL] The priority-restocking implementation builds successfully with 0 warnings and 0 errors; deployed the 13,824-byte DLL and verified source/destination SHA-256 `DB1897F71B2B747AC01C0C08C293FAD7712E9764E94EA267B13ACA429D8F2CB8` match. In-game restart/retest remains pending.
 - 2026-07-17T15:02Z [TOOL] The 16-tick scheduling optimization builds with 0 warnings/errors; built IL confirms the override returns 16. Deployed the 13,824-byte DLL and verified SHA-256 `741A93525AC908D287616E3FB4DC8ECB490207A0B0417177D7E650D400F2AE27`; restart/retest remains pending.
 - 2026-07-17T15:09Z [TOOL] The deeper optimization builds with 0 warnings/errors; built IL confirms a 64-tick interval and that current-stock comparison returns before trip-buffer access. Deployed the 13,824-byte DLL and verified SHA-256 `AA772DF412E3252CF542B6A26B42A24D77CE086BE7120D5C0D5B5EBE986031ED`; restart/in-game profiling remains pending.
+- 2026-07-17T15:20Z [TOOL] Persistence fix builds with 0 warnings/errors; compiled metadata confirms unique `SignatureFix.SignatureFixSettings`, no legacy generic type, file location `SignatureFix`, and all three persisted properties. Deployed the 13,824-byte DLL and verified SHA-256 `CC30084FAFC713AB7901CF86AF45EB2FFD3C3D1D2652228645BECC1F19FD0834`; restart/save verification remains pending.

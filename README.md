@@ -10,7 +10,7 @@ Open **Options > Fix Signatures** and configure:
 - **Maximum storage (tonnes)**: 10–5,000 t, default 300 t.
 - **Input restock target**: 25–100%, default 75%.
 
-Changes apply during gameplay to existing signature buildings and to buildings placed later.
+Changes save automatically, load on the next game start, and apply during gameplay to existing signature buildings and buildings placed later.
 
 When a required production input plus deliveries already on the way falls below the restock target, the mod asks the game's normal purchase system for another truckload. The game still uses real local suppliers or outside connections, pays normal costs, and requires a working delivery route.
 

@@ -35,9 +35,9 @@ namespace SignatureFix
         [Preserve]
         protected override void OnUpdate()
         {
-            int maxVehicles = Mod.Settings?.MaxVehicles ?? Setting.DefaultMaxVehicles;
-            int maxStorage = (Mod.Settings?.MaxStorage ?? Setting.DefaultMaxStorage) * Setting.StorageUnitsPerTonne;
-            int restockTarget = Mod.Settings?.RestockTarget ?? Setting.DefaultRestockTarget;
+            int maxVehicles = Mod.Settings?.MaxVehicles ?? SignatureFixSettings.DefaultMaxVehicles;
+            int maxStorage = (Mod.Settings?.MaxStorage ?? SignatureFixSettings.DefaultMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
+            int restockTarget = Mod.Settings?.RestockTarget ?? SignatureFixSettings.DefaultRestockTarget;
             int patchedVehicleCompanies = 0;
             int patchedStorageCompanies = 0;
             int queuedPurchases = 0;
@@ -86,7 +86,7 @@ namespace SignatureFix
             }
 
             if (patchedVehicleCompanies > 0 || patchedStorageCompanies > 0)
-                Mod.log.Info($"Updated {patchedVehicleCompanies} vehicle limits to {maxVehicles} and {patchedStorageCompanies} storage limits to {maxStorage / Setting.StorageUnitsPerTonne} t.");
+                Mod.log.Info($"Updated {patchedVehicleCompanies} vehicle limits to {maxVehicles} and {patchedStorageCompanies} storage limits to {maxStorage / SignatureFixSettings.StorageUnitsPerTonne} t.");
 
             if (queuedPurchases > 0)
                 Mod.log.Debug($"Queued {queuedPurchases} priority input purchase(s) for signature companies.");
