@@ -26,7 +26,9 @@ namespace SignatureFix
         protected override void OnUpdate()
         {
             int maxVehicles = Mod.Settings?.MaxVehicles ?? Setting.DefaultMaxVehicles;
-            int patchedCompanies = 0;
+            int maxStorage = (Mod.Settings?.MaxStorage ?? Setting.DefaultMaxStorage) * Setting.StorageUnitsPerTonne;
+            int patchedVehicleCompanies = 0;
+            int patchedStorageCompanies = 0;
 
             // ponytail: signature buildings are few; replace this scan with renter-change tracking only if profiling says it matters.
             using NativeArray<Entity> signatureBuildings = m_SignatureBuildings.ToEntityArray(Allocator.Temp);
@@ -41,21 +43,32 @@ namespace SignatureFix
                         continue;
 
                     Entity companyPrefab = EntityManager.GetComponentData<PrefabRef>(company).m_Prefab;
-                    if (!EntityManager.HasComponent<TransportCompanyData>(companyPrefab))
-                        continue;
+                    if (EntityManager.HasComponent<TransportCompanyData>(companyPrefab))
+                    {
+                        TransportCompanyData transportCompany = EntityManager.GetComponentData<TransportCompanyData>(companyPrefab);
+                        if (transportCompany.m_MaxTransports != maxVehicles)
+                        {
+                            transportCompany.m_MaxTransports = maxVehicles;
+                            EntityManager.SetComponentData(companyPrefab, transportCompany);
+                            patchedVehicleCompanies++;
+                        }
+                    }
 
-                    TransportCompanyData transportCompany = EntityManager.GetComponentData<TransportCompanyData>(companyPrefab);
-                    if (transportCompany.m_MaxTransports == maxVehicles)
-                        continue;
-
-                    transportCompany.m_MaxTransports = maxVehicles;
-                    EntityManager.SetComponentData(companyPrefab, transportCompany);
-                    patchedCompanies++;
+                    if (EntityManager.HasComponent<StorageLimitData>(companyPrefab))
+                    {
+                        StorageLimitData storageLimit = EntityManager.GetComponentData<StorageLimitData>(companyPrefab);
+                        if (storageLimit.m_Limit != maxStorage)
+                        {
+                            storageLimit.m_Limit = maxStorage;
+                            EntityManager.SetComponentData(companyPrefab, storageLimit);
+                            patchedStorageCompanies++;
+                        }
+                    }
                 }
             }
 
-            if (patchedCompanies > 0)
-                Mod.log.Info($"Set maximum vehicles to {maxVehicles} for {patchedCompanies} signature building company prefabs.");
+            if (patchedVehicleCompanies > 0 || patchedStorageCompanies > 0)
+                Mod.log.Info($"Updated {patchedVehicleCompanies} vehicle limits to {maxVehicles} and {patchedStorageCompanies} storage limits to {maxStorage / Setting.StorageUnitsPerTonne} t.");
         }
     }
 }

@@ -4,11 +4,11 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Fix Signatures" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Choose the maximum number of vehicles owned by signature buildings." />
+	<ShortDescription Value="Choose vehicle and storage limits for signature buildings." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-Adds a Maximum vehicles slider under Options &gt; Fix Signatures. The selected limit applies to delivery vehicles owned by every signature building, including existing buildings.
+Adds vehicle and storage sliders under Options &gt; Fix Signatures. The selected limits apply to signature buildings during gameplay, including existing buildings.
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail.png" />

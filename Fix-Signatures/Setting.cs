@@ -7,25 +7,32 @@ using System.Collections.Generic;
 namespace SignatureFix
 {
     [FileLocation(nameof(SignatureFix))]
-    [SettingsUIGroupOrder(kVehicleGroup)]
-    [SettingsUIShowGroupName(kVehicleGroup)]
+    [SettingsUIGroupOrder(kLimitsGroup)]
+    [SettingsUIShowGroupName(kLimitsGroup)]
     public class Setting : ModSetting
     {
         public const string kSection = "Main";
-        public const string kVehicleGroup = "Vehicles";
+        public const string kLimitsGroup = "Limits";
         public const int DefaultMaxVehicles = 10;
+        public const int DefaultMaxStorage = 300;
+        internal const int StorageUnitsPerTonne = 1000;
 
         public Setting(IMod mod) : base(mod)
         {
         }
 
         [SettingsUISlider(min = 1, max = 100, step = 1)]
-        [SettingsUISection(kSection, kVehicleGroup)]
+        [SettingsUISection(kSection, kLimitsGroup)]
         public int MaxVehicles { get; set; } = DefaultMaxVehicles;
+
+        [SettingsUISlider(min = 10, max = 5000, step = 10)]
+        [SettingsUISection(kSection, kLimitsGroup)]
+        public int MaxStorage { get; set; } = DefaultMaxStorage;
 
         public override void SetDefaults()
         {
             MaxVehicles = DefaultMaxVehicles;
+            MaxStorage = DefaultMaxStorage;
         }
     }
 
@@ -44,9 +51,11 @@ namespace SignatureFix
             {
                 { m_Setting.GetSettingsLocaleID(), "Fix Signatures" },
                 { m_Setting.GetOptionTabLocaleID(Setting.kSection), "Main" },
-                { m_Setting.GetOptionGroupLocaleID(Setting.kVehicleGroup), "Signature building vehicles" },
+                { m_Setting.GetOptionGroupLocaleID(Setting.kLimitsGroup), "Signature building limits" },
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.MaxVehicles)), "Maximum vehicles" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.MaxVehicles)), "Maximum delivery vehicles owned by each signature building. Changes apply to existing and newly placed signature buildings." },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.MaxStorage)), "Maximum storage (tonnes)" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.MaxStorage)), "Maximum total storage for each signature building, in tonnes. Changes apply during gameplay." },
             };
         }
 

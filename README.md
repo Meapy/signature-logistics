@@ -1,10 +1,15 @@
 # Fix Signatures
 
-A Cities: Skylines II code mod that lets you choose how many delivery vehicles each signature building may own.
+A Cities: Skylines II code mod that lets you choose the vehicle and storage limits for signature buildings.
 
 ## Usage
 
-Open **Options > Fix Signatures**, then set **Maximum vehicles** from 1 to 100. The mod defaults to 10. Changes apply to existing signature buildings and to buildings placed later.
+Open **Options > Fix Signatures** and configure:
+
+- **Maximum vehicles**: 1–100, default 10.
+- **Maximum storage (tonnes)**: 10–5,000 t, default 300 t.
+
+Changes apply during gameplay to existing signature buildings and to buildings placed later.
 
 Only signature buildings with a transport-company component are changed. Service vehicle capacities, ordinary zoned companies, and cargo stations are left untouched.
 
