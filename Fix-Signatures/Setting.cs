@@ -13,7 +13,7 @@ namespace SignatureFix
     {
         public const string kSection = "Main";
         public const string kVehicleGroup = "Vehicles";
-        public const int DefaultMaxVehicles = 5;
+        public const int DefaultMaxVehicles = 10;
 
         public Setting(IMod mod) : base(mod)
         {

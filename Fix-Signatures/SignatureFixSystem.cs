@@ -1,4 +1,5 @@
 using Game;
+using Game.Buildings;
 using Game.Companies;
 using Game.Prefabs;
 using Unity.Collections;
@@ -9,36 +10,52 @@ namespace SignatureFix
 {
     public partial class SignatureFixSystem : GameSystemBase
     {
-        private EntityQuery m_SignatureCompanies;
-        private int m_AppliedMaxVehicles = -1;
+        private EntityQuery m_SignatureBuildings;
 
         [Preserve]
         protected override void OnCreate()
         {
             base.OnCreate();
-            m_SignatureCompanies = GetEntityQuery(
-                ComponentType.ReadOnly<SignatureBuildingData>(),
-                ComponentType.ReadWrite<TransportCompanyData>());
-            RequireForUpdate(m_SignatureCompanies);
+            m_SignatureBuildings = GetEntityQuery(
+                ComponentType.ReadOnly<Signature>(),
+                ComponentType.ReadOnly<Renter>());
+            RequireForUpdate(m_SignatureBuildings);
         }
 
         [Preserve]
         protected override void OnUpdate()
         {
             int maxVehicles = Mod.Settings?.MaxVehicles ?? Setting.DefaultMaxVehicles;
-            if (maxVehicles == m_AppliedMaxVehicles)
-                return;
+            int patchedCompanies = 0;
 
-            using NativeArray<Entity> signatureCompanies = m_SignatureCompanies.ToEntityArray(Allocator.Temp);
-            foreach (Entity entity in signatureCompanies)
+            // ponytail: signature buildings are few; replace this scan with renter-change tracking only if profiling says it matters.
+            using NativeArray<Entity> signatureBuildings = m_SignatureBuildings.ToEntityArray(Allocator.Temp);
+            foreach (Entity building in signatureBuildings)
             {
-                TransportCompanyData company = EntityManager.GetComponentData<TransportCompanyData>(entity);
-                company.m_MaxTransports = maxVehicles;
-                EntityManager.SetComponentData(entity, company);
+                DynamicBuffer<Renter> renters = EntityManager.GetBuffer<Renter>(building, true);
+                foreach (Renter renter in renters)
+                {
+                    Entity company = renter.m_Renter;
+                    if (!EntityManager.HasComponent<CompanyData>(company) ||
+                        !EntityManager.HasComponent<PrefabRef>(company))
+                        continue;
+
+                    Entity companyPrefab = EntityManager.GetComponentData<PrefabRef>(company).m_Prefab;
+                    if (!EntityManager.HasComponent<TransportCompanyData>(companyPrefab))
+                        continue;
+
+                    TransportCompanyData transportCompany = EntityManager.GetComponentData<TransportCompanyData>(companyPrefab);
+                    if (transportCompany.m_MaxTransports == maxVehicles)
+                        continue;
+
+                    transportCompany.m_MaxTransports = maxVehicles;
+                    EntityManager.SetComponentData(companyPrefab, transportCompany);
+                    patchedCompanies++;
+                }
             }
 
-            m_AppliedMaxVehicles = maxVehicles;
-            Mod.log.Info($"Set maximum vehicles to {maxVehicles} for {signatureCompanies.Length} signature building prefabs.");
+            if (patchedCompanies > 0)
+                Mod.log.Info($"Set maximum vehicles to {maxVehicles} for {patchedCompanies} signature building company prefabs.");
         }
     }
 }
