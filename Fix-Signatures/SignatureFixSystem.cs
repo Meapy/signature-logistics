@@ -18,6 +18,9 @@ namespace SignatureFix
         private EntityQuery m_SignatureBuildings;
         private VehicleCapacitySystem m_VehicleCapacitySystem;
 
+        // Match ResourceBuyerSystem so every scan can be consumed without per-frame polling.
+        public override int GetUpdateInterval(SystemUpdatePhase phase) => 16;
+
         [Preserve]
         protected override void OnCreate()
         {
