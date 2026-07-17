@@ -43,7 +43,7 @@ const moduleRegistry = {
   }
 };
 
-const bundle = await import(`${pathToFileURL("./dist/Fix-Signatures.js").href}?test=${Date.now()}`);
+const bundle = await import(`${pathToFileURL("./dist/Fix-Signatures.mjs").href}?test=${Date.now()}`);
 bundle.default(moduleRegistry);
 
 const OriginalVehicleItem = () => element("InfoRow", { link: element("Link", null, "Buying") });

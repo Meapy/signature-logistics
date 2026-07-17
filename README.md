@@ -36,4 +36,4 @@ npm install
 npm run build
 ```
 
-For a local installation, place `Fix-Signatures.dll`, `Fix-Signatures.js`, and `Fix-Signatures.css` together in the game's `Mods\Fix-Signatures` folder.
+For a local installation, place `Fix-Signatures.dll`, `Fix-Signatures.mjs`, and `Fix-Signatures.css` together in the game's `Mods\Fix-Signatures` folder. The current game UI loader discovers ES modules by the `.mjs` extension.

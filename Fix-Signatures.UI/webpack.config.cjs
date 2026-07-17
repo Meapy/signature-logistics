@@ -20,7 +20,7 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "Fix-Signatures.js",
+    filename: "Fix-Signatures.mjs",
     library: { type: "module" },
     publicPath: "coui://ui-mods/",
     clean: true

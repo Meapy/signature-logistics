@@ -11,6 +11,7 @@ function sameEntity(left, right) {
 }
 
 export default function register(moduleRegistry) {
+  console.log("[Fix Signatures] UI module registered.");
   moduleRegistry.extend(vehiclesModule, "VehicleItem", (OriginalVehicleItem) => (props) => {
     const vehicleDetails = useValue(vehicleDetails$);
     const detail = vehicleDetails.find((item) => sameEntity(item.entity, props.vehicle.entity));
