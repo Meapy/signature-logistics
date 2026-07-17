@@ -3,6 +3,7 @@ using Colossal.Logging;
 using Game;
 using Game.Modding;
 using Game.SceneFlow;
+using Game.Simulation;
 
 namespace SignatureFix
 {
@@ -23,7 +24,7 @@ namespace SignatureFix
             GameManager.instance.localizationManager.AddSource("en-US", new LocaleEN(Settings));
             AssetDatabase.global.LoadSettings(nameof(SignatureFix), Settings, new Setting(this));
 
-            updateSystem.UpdateAt<SignatureFixSystem>(SystemUpdatePhase.GameSimulation);
+            updateSystem.UpdateBefore<SignatureFixSystem, ResourceBuyerSystem>(SystemUpdatePhase.GameSimulation);
         }
 
         public void OnDispose()

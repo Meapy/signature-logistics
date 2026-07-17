@@ -15,6 +15,7 @@ namespace SignatureFix
         public const string kLimitsGroup = "Limits";
         public const int DefaultMaxVehicles = 10;
         public const int DefaultMaxStorage = 300;
+        public const int DefaultRestockTarget = 75;
         internal const int StorageUnitsPerTonne = 1000;
 
         public Setting(IMod mod) : base(mod)
@@ -29,10 +30,15 @@ namespace SignatureFix
         [SettingsUISection(kSection, kLimitsGroup)]
         public int MaxStorage { get; set; } = DefaultMaxStorage;
 
+        [SettingsUISlider(min = 25, max = 100, step = 5)]
+        [SettingsUISection(kSection, kLimitsGroup)]
+        public int RestockTarget { get; set; } = DefaultRestockTarget;
+
         public override void SetDefaults()
         {
             MaxVehicles = DefaultMaxVehicles;
             MaxStorage = DefaultMaxStorage;
+            RestockTarget = DefaultRestockTarget;
         }
     }
 
@@ -56,6 +62,8 @@ namespace SignatureFix
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.MaxVehicles)), "Maximum delivery vehicles owned by each signature building. Changes apply to existing and newly placed signature buildings." },
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.MaxStorage)), "Maximum storage (tonnes)" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.MaxStorage)), "Maximum total storage for each signature building, in tonnes. Changes apply during gameplay." },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RestockTarget)), "Input restock target (%)" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.RestockTarget)), "Keep each required input at this percentage of its storage share by requesting normal local deliveries or imports. Higher values order sooner and use more vehicles." },
             };
         }
 
