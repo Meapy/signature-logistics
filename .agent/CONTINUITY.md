@@ -11,6 +11,7 @@
 - 2026-07-17T16:34Z [USER] Make the working vehicle-detail rows clearer and more intuitive after the original extension wrapped status and details onto two lines.
 - 2026-07-18T14:04Z [USER] Correct the revised three-column layout, which crushed vehicle names and clipped state/distance at the panel edge.
 - 2026-07-18T14:31Z [USER] Add saved per-building maximum vehicle and storage overrides, edited from the selected signature factory, with global sliders as fallbacks.
+- 2026-07-18T15:43Z [USER] Prepare the mod for Paradox Mods publishing, rename it to something more applicable than Fix Signatures, and replace the AI-looking store artwork.
 
 [DECISIONS]
 
@@ -28,6 +29,8 @@
 - 2026-07-17T16:10Z [CODE] Preserve the native `VehicleItem` row and state link, append localized cargo/capacity and distance through the official UI module registry, and publish selected-company details through a throttled managed binding.
 - 2026-07-17T16:10Z [CODE] Report straight-line world distance to the current `VehicleUIUtils` destination; exact road-route distance is not maintained by the game as a decrementing UI value and would require walking live path/lane geometry.
 - 2026-07-18T14:31Z [CODE] Save two validated integers on each selected signature building through an `ISerializable` ECS component; the simulation uses them before global defaults, and removing the component resets the building to global values.
+- 2026-07-18T15:43Z [CODE] Use `Signature Logistics` for every player-facing/store name while retaining internal `SignatureFix` binding, setting, namespace, and assembly identifiers so existing settings and serialized city components remain compatible.
+- 2026-07-18T15:43Z [CODE] Package the already-tested UI bundle through native MSBuild content items and fail Release builds when it is absent; do not add a second packaging system.
 
 [PROGRESS]
 
@@ -40,6 +43,7 @@
 - 2026-07-17T15:20Z [CODE] Updated all settings references and documentation; automatic native slider `ApplyAndSave` now resolves the unique settings type.
 - 2026-07-17T16:10Z [CODE] Added `VehicleDetailsUISystem`, a minimal JS/CSS vehicle-row extension, pinned UI build tooling, a built-bundle smoke test, local container recipe, and updated usage/publishing documentation.
 - 2026-07-18T14:31Z [CODE] Added selected-building limit bindings/triggers, compact native sliders below the vehicle section, saved override/reset handling, and per-building restock/storage/vehicle application.
+- 2026-07-18T15:43Z [CODE] Completed initial-store metadata, valid Code Mod/UI tags, compatibility/version data, release instructions, UI-inclusive Release packaging, and new Signature Logistics thumbnail artwork.
 
 [DISCOVERIES]
 
@@ -58,6 +62,9 @@
 - 2026-07-18T14:04Z [TOOL] In-game screenshot showed the native `InfoRow` three-column sizing plus `noShrinkRight` compressed names to near-unreadable text and overflowed the right link; reusing its original two-column layout avoids both constraints.
 - 2026-07-18T14:31Z [TOOL] Installed `Game.dll` shows vehicle capacity and production/storage simulation read `TransportCompanyData` and `StorageLimitData` from the renter company's prefab rather than instance components; signature factories are unique, so the selected building's saved values are applied to its dedicated company prefab.
 - 2026-07-18T14:31Z [TOOL] Installed mods confirm custom `IComponentData` plus `Colossal.Serialization.Entities.ISerializable` is the established city-save persistence pattern; compiled metadata confirms the new component implements both interfaces.
+- 2026-07-18T15:43Z [TOOL] Current ModPublisher validation requires non-empty display/description/thumbnail/version/game-version fields and at least one tag; the template's empty tag and placeholder metadata were not publish-ready.
+- 2026-07-18T15:43Z [TOOL] The installed game reports `1.6.0f1`, and a locally cached published code-mod configuration confirms `Code Mod`, `UI`, and `1.6.0*` as current metadata values.
+- 2026-07-18T15:43Z [TOOL] The original Release deploy path contained only managed/native artifacts; adding the two UI files as MSBuild content makes both Release output and publisher deploy folder complete.
 
 [OUTCOMES]
 
@@ -77,3 +84,4 @@
 - 2026-07-17T16:34Z [TOOL] Reworked the native row into three columns: vehicle name, centered resource cargo/capacity, and clickable state plus distance. UI build/smoke test pass; deployed hash-matching MJS `5960F9985ADBC4B71E1DA7797E67C65A2FFBD6A189B44CA9767D93053119E937` and CSS `183A31DE2034A32E6597B7600FCFED69B78693F19D34A7525C323FD11861AC37`; restart/retest remains pending.
 - 2026-07-18T14:04Z [TOOL] Replaced the failing three-column row with the native two-column layout: full-size name plus compact cargo on the left, clickable state plus smaller distance on the right. UI build/smoke test pass; deployed hash-matching MJS `FAE43CA9C8B1C139769F370DEBF81B31E08507EFEFEBDA9923CA6F1FA8863969` and CSS `9418CE8294A5F186F059D115F7879F5A4B1DFA7006A0A0104F7A7A11B89503C0`; restart/retest remains pending.
 - 2026-07-18T14:31Z [TOOL] Per-building vehicle/storage overrides build with 0 managed warnings/errors and pass the UI build/interaction smoke test. Deployed hash-matching DLL `A85478922803283936E0F6A622EF2BC0D106D3975BEAA4E7B19715439F35A507`, MJS `E9D1CA2E0084FF131FF0C3D35BF812715339507C36188B9403F68538CD96BE00`, and CSS `43FC07622776B583C91F17B2FB499FFB477CBAAEB2BA272A70FC55A1146FE15F`; restart, slider, reset, and save/reload testing remain pending.
+- 2026-07-18T15:43Z [TOOL] `Signature Logistics` metadata and 950x500 thumbnail validate locally; pinned npm UI build/smoke test passes, Docker is unavailable, and the complete Release build succeeds with 0 warnings/errors. Release/deploy hashes match for DLL `0BFD6DC78E660F88510B9C27B912C12F255D6ABA16C68F8F1D97B8CC1554C858`, MJS `939027EFAA230C1F54020915A62BC21B2FFDFED6C11A35B87742E24F4495705D`, and CSS `43FC07622776B583C91F17B2FB499FFB477CBAAEB2BA272A70FC55A1146FE15F`; final in-game per-building/save-reload test and the user-authorized upload remain release gates.

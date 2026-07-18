@@ -13,7 +13,7 @@ function sameEntity(left, right) {
 }
 
 export default function register(moduleRegistry) {
-  console.log("[Fix Signatures] UI module registered.");
+  console.log("[Signature Logistics] UI module registered.");
   const Slider = moduleRegistry.get(sliderModule, "Slider");
   const useStepTransformer = moduleRegistry.get(sliderModule, "useStepTransformer");
 

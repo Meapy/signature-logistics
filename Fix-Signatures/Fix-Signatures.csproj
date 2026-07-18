@@ -74,4 +74,13 @@
 		<None Include="$(ModTargetsFile)" Link="Properties\Mod.targets" />
 	</ItemGroup>
 
+	<ItemGroup Condition="Exists('..\Fix-Signatures.UI\dist\Fix-Signatures.mjs') And Exists('..\Fix-Signatures.UI\dist\Fix-Signatures.css')">
+		<Content Include="..\Fix-Signatures.UI\dist\Fix-Signatures.mjs" Link="Fix-Signatures.mjs" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="..\Fix-Signatures.UI\dist\Fix-Signatures.css" Link="Fix-Signatures.css" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<Target Name="CheckReleaseUIBundle" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release'">
+		<Error Condition="!Exists('..\Fix-Signatures.UI\dist\Fix-Signatures.mjs') Or !Exists('..\Fix-Signatures.UI\dist\Fix-Signatures.css')" Text="Release requires the UI bundle. Run npm test in Fix-Signatures.UI first." />
+	</Target>
+
 </Project>

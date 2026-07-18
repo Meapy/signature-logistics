@@ -59,7 +59,7 @@ namespace SignatureFix
         {
             return new Dictionary<string, string>
             {
-                { m_Setting.GetSettingsLocaleID(), "Fix Signatures" },
+                { m_Setting.GetSettingsLocaleID(), "Signature Logistics" },
                 { m_Setting.GetOptionTabLocaleID(SignatureFixSettings.kSection), "Main" },
                 { m_Setting.GetOptionGroupLocaleID(SignatureFixSettings.kLimitsGroup), "Signature building limits" },
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.MaxVehicles)), "Maximum vehicles" },

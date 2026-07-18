@@ -1,37 +1,36 @@
 ﻿<Publish>
 	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
-	<ModId Value="" />
+	<ModId Value="0" />
 	<!--Name of the mod to display to players-->
-	<DisplayName Value="Fix Signatures" />
+	<DisplayName Value="Signature Logistics" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Configure signature industries and inspect active delivery vehicles." />
+	<ShortDescription Value="Per-building vehicle, storage, and delivery controls for signature factories." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-Adds global vehicle, storage, and input-restocking sliders under Options &gt; Fix Signatures. Select a signature factory to save vehicle and storage limits for that building, or reset it to the global defaults. Expanded vehicle rows show each delivery vehicle's cargo and approximate distance to its destination.
+Take control of signature-factory logistics without changing ordinary zoned industry.
+
+- Set global vehicle, storage, and input-restocking defaults.
+- Save separate vehicle and storage limits on individual signature factories.
+- Reset any factory to the global defaults at any time.
+- Keep required production inputs moving through normal local suppliers and imports.
+- See each active delivery vehicle's cargo and approximate distance to its destination.
+
+The game still chooses real suppliers, charges normal costs, and requires a working delivery route.
 	</LongDescription>
 	<!--Thumbnail-->
-	<Thumbnail Value="Properties/Thumbnail.png" />
-	<!--Screenshot, can be set multiple times-->
-	<Screenshot Value="" />
-	<!--Tag, can be set multiple times-->
-	<Tag Value="" />
-	<!--Link to the forum post where the mod can be discussed-->
-	<ForumLink Value="" />
+	<Thumbnail Value="Properties/Thumbnail-signature-logistics.png" />
+	<!--Screenshot can be added after final in-game capture. -->
+	<Tag Value="Code Mod" />
+	<Tag Value="UI" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0" />
+	<ModVersion Value="1.0.0" />
 	<!--Recommended version of the base game to use the mod-->
-	<GameVersion Value="1.0.*" />
-	<!--Dependency for the mod, can be set multiple times-->
-	<Dependency Id="" />
-	<!--Required DLC, can be set multiple times. Supported values are "Landmark Buildings", "San Fransisco Set", "Beach Properties", "Urban Promenades", "Modern Architecture"-->
-	<RequiredDLC Value="" />
+	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="" />
+	<ChangeLog Value="Initial release: configurable global and per-building vehicle/storage limits, priority input restocking, and active delivery cargo/distance details." />
 	<!--<ChangeLog>
 	</ChangeLog>-->
-	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
-	<ExternalLink Type="" Url="" />
 	<!--Supported values Public, Private, Unlisted-->
 	<AccessLevel Value="Public" />
 </Publish>
