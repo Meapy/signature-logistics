@@ -46,12 +46,11 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 ## Publish to Paradox Mods
 
-The initial store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. It targets game version `1.6.0*`, uses version `1.0.0`, and has no mod or DLC dependencies.
+The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, uses version `1.0.0`, and has no mod or DLC dependencies.
 
 1. Capture a final in-game screenshot after testing the per-building controls and add its path as a `Screenshot` entry if desired.
 2. Run the UI test/build first: `npm test` in `Fix-Signatures.UI` (or use the Docker command above).
-3. Publish the managed project with the `PublishNewMod` profile in Visual Studio. The Release build now refuses to package without the UI bundle and includes the `.mjs` and `.css` beside the DLL automatically.
-4. After the first upload, replace `<ModId Value="0" />` with the returned Paradox Mods ID. For later releases, increment `ModVersion`, update `ChangeLog`, and use the `PublishNewVersion` profile.
+3. For later releases, increment `ModVersion`, update `ChangeLog`, and publish the managed project with the `PublishNewVersion` profile in Visual Studio. The Release build refuses to package without the UI bundle and includes the `.mjs` and `.css` beside the DLL automatically.
 
 Publishing is the only step that signs in to Paradox Mods or changes the remote listing; normal builds do not upload anything.
 
