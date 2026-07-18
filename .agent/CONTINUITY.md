@@ -14,6 +14,7 @@
 - 2026-07-18T15:43Z [USER] Prepare the mod for Paradox Mods publishing, rename it to something more applicable than Fix Signatures, and replace the AI-looking store artwork.
 - 2026-07-18T15:49Z [USER] Publish Signature Logistics to Paradox Mods.
 - 2026-07-18T16:07Z [USER] Create a public GitHub repository, link it from Paradox Mods, and add three supplied in-game screenshots to the store posting.
+- 2026-07-18T16:22Z [USER] Replace the `Codex` author/committer identity on every published commit with the user's GitHub identity.
 
 [DECISIONS]
 
@@ -36,6 +37,7 @@
 - 2026-07-18T15:49Z [CODE] Store returned Paradox Mods ID `151747` in publish metadata and use only the server-valid `Code Mod` tag for future releases.
 - 2026-07-18T16:07Z [USER] Include the existing local defaults change in the GitHub publication: 20 vehicles, 500 tonnes, and 25% input restocking.
 - 2026-07-18T16:07Z [CODE] Use `https://github.com/Meapy/signature-logistics` as the canonical public source link and retain the supplied PNGs without visual modification.
+- 2026-07-18T16:22Z [CODE] Use verified GitHub identity `Daniel Krasovski <44982407+Meapy@users.noreply.github.com>` for all existing and future repository commits.
 
 [PROGRESS]
 
@@ -52,6 +54,7 @@
 - 2026-07-18T15:49Z [TOOL] Published the verified Release package through the official installed ModPublisher and recorded its returned ID for subsequent `NewVersion` uploads.
 - 2026-07-18T16:07Z [CODE] Added the three supplied screenshots to publish metadata, added the planned GitHub external link, and updated README defaults and Paradox download link.
 - 2026-07-18T16:12Z [TOOL] Created public repository `Meapy/signature-logistics`, pushed the complete `master` history, and successfully updated Paradox Mods ID `151747` with the GitHub link and three screenshots.
+- 2026-07-18T16:22Z [TOOL] Rewrote all 18 local commits' author and committer fields while preserving commit count, trees, subjects, author dates, and committer dates; retained local recovery branch `backup/pre-user-author-rewrite-20260718`.
 
 [DISCOVERIES]
 
