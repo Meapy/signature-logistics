@@ -27,6 +27,9 @@ namespace SignatureFix
             base.OnCreate();
             m_SelectedInfo = World.GetOrCreateSystemManaged<SelectedInfoUISystem>();
             AddUpdateBinding(new RawValueBinding(BindingGroup, "vehicleDetails", WriteVehicleDetails));
+            AddUpdateBinding(new RawValueBinding(BindingGroup, "buildingLimits", WriteBuildingLimits));
+            AddBinding(new TriggerBinding<int, int>(BindingGroup, "setBuildingLimits", SetBuildingLimits, ValueReaders.Create<int>(), ValueReaders.Create<int>()));
+            AddBinding(new TriggerBinding(BindingGroup, "resetBuildingLimits", ResetBuildingLimits));
         }
 
         [Preserve]
@@ -90,6 +93,66 @@ namespace SignatureFix
                 writer.TypeEnd();
             }
             writer.ArrayEnd();
+        }
+
+        private void WriteBuildingLimits(IJsonWriter writer)
+        {
+            Entity building = m_SelectedInfo.selectedEntity;
+            bool visible = EntityManager.HasComponent<Signature>(building) && EntityManager.HasBuffer<Renter>(building);
+            int globalMaxVehicles = Mod.Settings?.MaxVehicles ?? SignatureFixSettings.DefaultMaxVehicles;
+            int globalMaxStorage = Mod.Settings?.MaxStorage ?? SignatureFixSettings.DefaultMaxStorage;
+            bool overridden = visible && EntityManager.HasComponent<SignatureBuildingLimits>(building);
+            int maxVehicles = globalMaxVehicles;
+            int maxStorage = globalMaxStorage;
+
+            if (overridden)
+            {
+                SignatureBuildingLimits limits = EntityManager.GetComponentData<SignatureBuildingLimits>(building);
+                maxVehicles = math.clamp(limits.m_MaxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles);
+                maxStorage = math.clamp(limits.m_MaxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage);
+            }
+
+            writer.TypeBegin("SignatureFix.BuildingLimits");
+            writer.PropertyName("visible");
+            writer.Write(visible);
+            writer.PropertyName("overridden");
+            writer.Write(overridden);
+            writer.PropertyName("maxVehicles");
+            writer.Write(maxVehicles);
+            writer.PropertyName("maxStorage");
+            writer.Write(maxStorage);
+            writer.PropertyName("globalMaxVehicles");
+            writer.Write(globalMaxVehicles);
+            writer.PropertyName("globalMaxStorage");
+            writer.Write(globalMaxStorage);
+            writer.TypeEnd();
+        }
+
+        private void SetBuildingLimits(int maxVehicles, int maxStorage)
+        {
+            Entity building = m_SelectedInfo.selectedEntity;
+            if (!EntityManager.HasComponent<Signature>(building) || !EntityManager.HasBuffer<Renter>(building))
+                return;
+
+            SignatureBuildingLimits limits = new SignatureBuildingLimits(
+                math.clamp(maxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles),
+                math.clamp(maxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage));
+
+            if (EntityManager.HasComponent<SignatureBuildingLimits>(building))
+                EntityManager.SetComponentData(building, limits);
+            else
+                EntityManager.AddComponentData(building, limits);
+
+            m_Frame = UpdateEveryFrames;
+        }
+
+        private void ResetBuildingLimits()
+        {
+            Entity building = m_SelectedInfo.selectedEntity;
+            if (EntityManager.HasComponent<SignatureBuildingLimits>(building))
+                EntityManager.RemoveComponent<SignatureBuildingLimits>(building);
+
+            m_Frame = UpdateEveryFrames;
         }
 
         private void GetCargo(Entity vehicle, out Resource resource, out int cargo, out int capacity)

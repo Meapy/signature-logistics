@@ -10,6 +10,7 @@
 - 2026-07-17T16:10Z [USER] Show each active delivery vehicle's cargo and distance to its destination on the existing Vehicles in use row.
 - 2026-07-17T16:34Z [USER] Make the working vehicle-detail rows clearer and more intuitive after the original extension wrapped status and details onto two lines.
 - 2026-07-18T14:04Z [USER] Correct the revised three-column layout, which crushed vehicle names and clipped state/distance at the panel edge.
+- 2026-07-18T14:31Z [USER] Add saved per-building maximum vehicle and storage overrides, edited from the selected signature factory, with global sliders as fallbacks.
 
 [DECISIONS]
 
@@ -26,6 +27,7 @@
 - 2026-07-17T15:20Z [CODE] Rename the generic `Setting` type to unique `SignatureFixSettings` while preserving `[FileLocation("SignatureFix")]` and property names, avoiding cross-mod save lookup collisions without migrating the existing file.
 - 2026-07-17T16:10Z [CODE] Preserve the native `VehicleItem` row and state link, append localized cargo/capacity and distance through the official UI module registry, and publish selected-company details through a throttled managed binding.
 - 2026-07-17T16:10Z [CODE] Report straight-line world distance to the current `VehicleUIUtils` destination; exact road-route distance is not maintained by the game as a decrementing UI value and would require walking live path/lane geometry.
+- 2026-07-18T14:31Z [CODE] Save two validated integers on each selected signature building through an `ISerializable` ECS component; the simulation uses them before global defaults, and removing the component resets the building to global values.
 
 [PROGRESS]
 
@@ -37,6 +39,7 @@
 - 2026-07-17T15:09Z [CODE] Reduced scans again from every 16 to every 64 ticks and added a current-stock early return before pending-trip and owned-vehicle buffer walks.
 - 2026-07-17T15:20Z [CODE] Updated all settings references and documentation; automatic native slider `ApplyAndSave` now resolves the unique settings type.
 - 2026-07-17T16:10Z [CODE] Added `VehicleDetailsUISystem`, a minimal JS/CSS vehicle-row extension, pinned UI build tooling, a built-bundle smoke test, local container recipe, and updated usage/publishing documentation.
+- 2026-07-18T14:31Z [CODE] Added selected-building limit bindings/triggers, compact native sliders below the vehicle section, saved override/reset handling, and per-building restock/storage/vehicle application.
 
 [DISCOVERIES]
 
@@ -53,6 +56,8 @@
 - 2026-07-17T16:10Z [TOOL] Native cargo UI sums loaded `DeliveryTruck.m_Amount` across `LayoutElement` vehicles and capacity comes from each prefab's `DeliveryTruckData.m_CargoCapacity`; the mod mirrors that behavior and uses the game's localized Weight and Length formatters.
 - 2026-07-17T16:24Z [TOOL] In-game retest showed native vehicle rows unchanged; `UI.log` had no Fix Signatures registration. Installed working packages contained 36 `.mjs` modules and no `.js` modules, while `DefaultAssetFactory.RegisterSupportedTypes` explicitly registers `.mjs`, proving the original `.js` bundle was never discovered.
 - 2026-07-18T14:04Z [TOOL] In-game screenshot showed the native `InfoRow` three-column sizing plus `noShrinkRight` compressed names to near-unreadable text and overflowed the right link; reusing its original two-column layout avoids both constraints.
+- 2026-07-18T14:31Z [TOOL] Installed `Game.dll` shows vehicle capacity and production/storage simulation read `TransportCompanyData` and `StorageLimitData` from the renter company's prefab rather than instance components; signature factories are unique, so the selected building's saved values are applied to its dedicated company prefab.
+- 2026-07-18T14:31Z [TOOL] Installed mods confirm custom `IComponentData` plus `Colossal.Serialization.Entities.ISerializable` is the established city-save persistence pattern; compiled metadata confirms the new component implements both interfaces.
 
 [OUTCOMES]
 
@@ -71,3 +76,4 @@
 - 2026-07-17T16:24Z [TOOL] Corrected the UI artifact extension to `.mjs`, added a UI registration log marker, reran the built-bundle smoke test successfully, deployed hash-matching SHA-256 `075CCEBB6340DA87601F3A0AF76CBA920525F4A8E6C60BDC0B5231A5F41BB7A6`, and removed the obsolete `.js`; full game restart/retest remains pending.
 - 2026-07-17T16:34Z [TOOL] Reworked the native row into three columns: vehicle name, centered resource cargo/capacity, and clickable state plus distance. UI build/smoke test pass; deployed hash-matching MJS `5960F9985ADBC4B71E1DA7797E67C65A2FFBD6A189B44CA9767D93053119E937` and CSS `183A31DE2034A32E6597B7600FCFED69B78693F19D34A7525C323FD11861AC37`; restart/retest remains pending.
 - 2026-07-18T14:04Z [TOOL] Replaced the failing three-column row with the native two-column layout: full-size name plus compact cargo on the left, clickable state plus smaller distance on the right. UI build/smoke test pass; deployed hash-matching MJS `FAE43CA9C8B1C139769F370DEBF81B31E08507EFEFEBDA9923CA6F1FA8863969` and CSS `9418CE8294A5F186F059D115F7879F5A4B1DFA7006A0A0104F7A7A11B89503C0`; restart/retest remains pending.
+- 2026-07-18T14:31Z [TOOL] Per-building vehicle/storage overrides build with 0 managed warnings/errors and pass the UI build/interaction smoke test. Deployed hash-matching DLL `A85478922803283936E0F6A622EF2BC0D106D3975BEAA4E7B19715439F35A507`, MJS `E9D1CA2E0084FF131FF0C3D35BF812715339507C36188B9403F68538CD96BE00`, and CSS `43FC07622776B583C91F17B2FB499FFB477CBAAEB2BA272A70FC55A1146FE15F`; restart, slider, reset, and save/reload testing remain pending.

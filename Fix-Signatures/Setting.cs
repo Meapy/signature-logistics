@@ -16,17 +16,21 @@ namespace SignatureFix
         public const int DefaultMaxVehicles = 10;
         public const int DefaultMaxStorage = 300;
         public const int DefaultRestockTarget = 75;
+        internal const int MinMaxVehicles = 1;
+        internal const int MaxMaxVehicles = 100;
+        internal const int MinMaxStorage = 10;
+        internal const int MaxMaxStorage = 5000;
         internal const int StorageUnitsPerTonne = 1000;
 
         public SignatureFixSettings(IMod mod) : base(mod)
         {
         }
 
-        [SettingsUISlider(min = 1, max = 100, step = 1)]
+        [SettingsUISlider(min = MinMaxVehicles, max = MaxMaxVehicles, step = 1)]
         [SettingsUISection(kSection, kLimitsGroup)]
         public int MaxVehicles { get; set; } = DefaultMaxVehicles;
 
-        [SettingsUISlider(min = 10, max = 5000, step = 10)]
+        [SettingsUISlider(min = MinMaxStorage, max = MaxMaxStorage, step = 10)]
         [SettingsUISection(kSection, kLimitsGroup)]
         public int MaxStorage { get; set; } = DefaultMaxStorage;
 

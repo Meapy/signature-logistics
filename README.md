@@ -10,11 +10,13 @@ Open **Options > Fix Signatures** and configure:
 - **Maximum storage (tonnes)**: 10-5,000 t, default 300 t.
 - **Input restock target**: 25-100%, default 75%.
 
-Changes save automatically, load on the next game start, and apply during gameplay to existing signature buildings and buildings placed later.
+Changes save automatically, load on the next game start, and act as the defaults for existing signature buildings and buildings placed later.
+
+To customize one building, select a signature factory and expand **Vehicles in use**. The **Building limits** controls immediately save a vehicle and storage override on that building in the current city. **Use global defaults** removes the override and returns that building to the Options values.
 
 When a required production input plus deliveries already on the way falls below the restock target, the mod asks the game's normal purchase system for another truckload. The game still uses real local suppliers or outside connections, pays normal costs, and requires a working delivery route.
 
-Only signature-building companies are changed. Service vehicle capacities, ordinary zoned companies, and cargo stations are left untouched.
+Only signature-building companies are changed. Service vehicle capacities, ordinary zoned companies, and cargo stations are left untouched. Signature factories are unique buildings; their dedicated company prefab consumes the saved building-specific limits.
 
 Expand **Vehicles in use** on a building to see each delivery vehicle's current cargo/capacity and approximate straight-line distance to its current destination on the same row. The game's original state link remains clickable.
 

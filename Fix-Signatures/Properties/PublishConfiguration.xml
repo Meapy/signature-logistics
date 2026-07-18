@@ -8,7 +8,7 @@
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-Adds vehicle, storage, and input-restocking sliders under Options &gt; Fix Signatures. The selected limits apply to existing and newly placed signature buildings. Expanded vehicle rows show each delivery vehicle's cargo and approximate distance to its destination.
+Adds global vehicle, storage, and input-restocking sliders under Options &gt; Fix Signatures. Select a signature factory to save vehicle and storage limits for that building, or reset it to the global defaults. Expanded vehicle rows show each delivery vehicle's cargo and approximate distance to its destination.
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail.png" />

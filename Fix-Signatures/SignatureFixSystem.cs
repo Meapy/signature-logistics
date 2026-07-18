@@ -49,6 +49,15 @@ namespace SignatureFix
             using NativeArray<Entity> signatureBuildings = m_SignatureBuildings.ToEntityArray(Allocator.Temp);
             foreach (Entity building in signatureBuildings)
             {
+                int buildingMaxVehicles = maxVehicles;
+                int buildingMaxStorage = maxStorage;
+                if (EntityManager.HasComponent<SignatureBuildingLimits>(building))
+                {
+                    SignatureBuildingLimits limits = EntityManager.GetComponentData<SignatureBuildingLimits>(building);
+                    buildingMaxVehicles = Unity.Mathematics.math.clamp(limits.m_MaxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles);
+                    buildingMaxStorage = Unity.Mathematics.math.clamp(limits.m_MaxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
+                }
+
                 DynamicBuffer<Renter> renters = EntityManager.GetBuffer<Renter>(building, true);
                 foreach (Renter renter in renters)
                 {
@@ -61,9 +70,9 @@ namespace SignatureFix
                     if (EntityManager.HasComponent<TransportCompanyData>(companyPrefab))
                     {
                         TransportCompanyData transportCompany = EntityManager.GetComponentData<TransportCompanyData>(companyPrefab);
-                        if (transportCompany.m_MaxTransports != maxVehicles)
+                        if (transportCompany.m_MaxTransports != buildingMaxVehicles)
                         {
-                            transportCompany.m_MaxTransports = maxVehicles;
+                            transportCompany.m_MaxTransports = buildingMaxVehicles;
                             EntityManager.SetComponentData(companyPrefab, transportCompany);
                             patchedVehicleCompanies++;
                         }
@@ -72,21 +81,21 @@ namespace SignatureFix
                     if (EntityManager.HasComponent<StorageLimitData>(companyPrefab))
                     {
                         StorageLimitData storageLimit = EntityManager.GetComponentData<StorageLimitData>(companyPrefab);
-                        if (storageLimit.m_Limit != maxStorage)
+                        if (storageLimit.m_Limit != buildingMaxStorage)
                         {
-                            storageLimit.m_Limit = maxStorage;
+                            storageLimit.m_Limit = buildingMaxStorage;
                             EntityManager.SetComponentData(companyPrefab, storageLimit);
                             patchedStorageCompanies++;
                         }
                     }
 
-                    if (QueueInputPurchase(company, building, companyPrefab, maxStorage, restockTarget, truckSelectData, ref deliveryTrucks, ref layouts))
+                    if (QueueInputPurchase(company, building, companyPrefab, buildingMaxStorage, restockTarget, truckSelectData, ref deliveryTrucks, ref layouts))
                         queuedPurchases++;
                 }
             }
 
             if (patchedVehicleCompanies > 0 || patchedStorageCompanies > 0)
-                Mod.log.Info($"Updated {patchedVehicleCompanies} vehicle limits to {maxVehicles} and {patchedStorageCompanies} storage limits to {maxStorage / SignatureFixSettings.StorageUnitsPerTonne} t.");
+                Mod.log.Info($"Updated {patchedVehicleCompanies} vehicle and {patchedStorageCompanies} storage limits for signature companies.");
 
             if (queuedPurchases > 0)
                 Mod.log.Debug($"Queued {queuedPurchases} priority input purchase(s) for signature companies.");
