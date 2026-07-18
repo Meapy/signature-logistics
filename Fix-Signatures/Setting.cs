@@ -13,9 +13,9 @@ namespace SignatureFix
     {
         public const string kSection = "Main";
         public const string kLimitsGroup = "Limits";
-        public const int DefaultMaxVehicles = 10;
-        public const int DefaultMaxStorage = 300;
-        public const int DefaultRestockTarget = 75;
+        public const int DefaultMaxVehicles = 20;
+        public const int DefaultMaxStorage = 500;
+        public const int DefaultRestockTarget = 25;
         internal const int MinMaxVehicles = 1;
         internal const int MaxMaxVehicles = 100;
         internal const int MinMaxStorage = 10;

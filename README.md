@@ -2,13 +2,17 @@
 
 A Cities: Skylines II code/UI mod that lets you choose the vehicle and storage limits for signature buildings, keep their production inputs stocked, and inspect active deliveries.
 
+[Download on Paradox Mods](https://mods.paradoxplaza.com/mods/151747/Windows)
+
+![Per-building logistics controls](Fix-Signatures/Properties/Screenshots/global-settings.png)
+
 ## Usage
 
 Open **Options > Signature Logistics** and configure:
 
-- **Maximum vehicles**: 1-100, default 10.
-- **Maximum storage (tonnes)**: 10-5,000 t, default 300 t.
-- **Input restock target**: 25-100%, default 75%.
+- **Maximum vehicles**: 1-100, default 20.
+- **Maximum storage (tonnes)**: 10-5,000 t, default 500 t.
+- **Input restock target**: 25-100%, default 25%.
 
 Changes save automatically, load on the next game start, and act as the defaults for existing signature buildings and buildings placed later.
 
@@ -48,9 +52,8 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, uses version `1.0.0`, and has no mod or DLC dependencies.
 
-1. Capture a final in-game screenshot after testing the per-building controls and add its path as a `Screenshot` entry if desired.
-2. Run the UI test/build first: `npm test` in `Fix-Signatures.UI` (or use the Docker command above).
-3. For later releases, increment `ModVersion`, update `ChangeLog`, and publish the managed project with the `PublishNewVersion` profile in Visual Studio. The Release build refuses to package without the UI bundle and includes the `.mjs` and `.css` beside the DLL automatically.
+1. Run the UI test/build first: `npm test` in `Fix-Signatures.UI` (or use the Docker command above).
+2. For later releases, increment `ModVersion`, update `ChangeLog`, and publish the managed project with the `PublishNewVersion` profile in Visual Studio. The Release build refuses to package without the UI bundle and includes the `.mjs` and `.css` beside the DLL automatically.
 
 Publishing is the only step that signs in to Paradox Mods or changes the remote listing; normal builds do not upload anything.
 

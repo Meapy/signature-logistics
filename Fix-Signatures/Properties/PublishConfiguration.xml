@@ -20,7 +20,10 @@ The game still chooses real suppliers, charges normal costs, and requires a work
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail-signature-logistics.png" />
-	<!--Screenshot can be added after final in-game capture. -->
+	<!--Screenshot, can be set multiple times-->
+	<Screenshot Value="Properties/Screenshots/vehicle-details.png" />
+	<Screenshot Value="Properties/Screenshots/global-settings.png" />
+	<Screenshot Value="Properties/Screenshots/building-logistics.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
 	<ModVersion Value="1.0.0" />
@@ -30,6 +33,7 @@ The game still chooses real suppliers, charges normal costs, and requires a work
 	<ChangeLog Value="Initial release: configurable global and per-building vehicle/storage limits, priority input restocking, and active delivery cargo/distance details." />
 	<!--<ChangeLog>
 	</ChangeLog>-->
+	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />
 	<!--Supported values Public, Private, Unlisted-->
 	<AccessLevel Value="Public" />
 </Publish>
