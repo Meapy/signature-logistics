@@ -46,11 +46,14 @@ const moduleRegistry = {
 const bundle = await import(`${pathToFileURL("./dist/Fix-Signatures.mjs").href}?test=${Date.now()}`);
 bundle.default(moduleRegistry);
 
-const OriginalVehicleItem = () => element("InfoRow", { link: element("Link", null, "Buying") });
+const OriginalVehicleItem = () => element("InfoRow", {
+  left: element("Name", null, "Delivery Pickup"),
+  link: element("Link", null, "Buying")
+});
 const row = extendVehicleItem(OriginalVehicleItem)({ vehicle: { entity } });
 const linkChildren = row.props.link.props.children;
 
-assert.equal(row.props.noShrinkRight, true);
-assert.equal(row.props.center.props.children[1].type, "LocalizedFraction");
+assert.equal(row.props.left.props.children[0].type, "Name");
+assert.equal(row.props.left.props.children[1].props.children[1].type, "LocalizedFraction");
 assert.equal(linkChildren.props.children[0], "Buying");
 assert.equal(linkChildren.props.children[1].props.children[1].type, "LocalizedNumber");

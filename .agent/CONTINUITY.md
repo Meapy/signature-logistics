@@ -9,6 +9,7 @@
 - 2026-07-17T15:20Z [USER] Persist all slider changes across game restarts.
 - 2026-07-17T16:10Z [USER] Show each active delivery vehicle's cargo and distance to its destination on the existing Vehicles in use row.
 - 2026-07-17T16:34Z [USER] Make the working vehicle-detail rows clearer and more intuitive after the original extension wrapped status and details onto two lines.
+- 2026-07-18T14:04Z [USER] Correct the revised three-column layout, which crushed vehicle names and clipped state/distance at the panel edge.
 
 [DECISIONS]
 
@@ -51,6 +52,7 @@
 - 2026-07-17T16:10Z [TOOL] Installed game code shows `VehiclesSection` serializes only entity/name/type/state; its frontend `VehicleItem` is an overridable module-registry export, so extra fields require a mod binding plus UI override rather than a hidden native option.
 - 2026-07-17T16:10Z [TOOL] Native cargo UI sums loaded `DeliveryTruck.m_Amount` across `LayoutElement` vehicles and capacity comes from each prefab's `DeliveryTruckData.m_CargoCapacity`; the mod mirrors that behavior and uses the game's localized Weight and Length formatters.
 - 2026-07-17T16:24Z [TOOL] In-game retest showed native vehicle rows unchanged; `UI.log` had no Fix Signatures registration. Installed working packages contained 36 `.mjs` modules and no `.js` modules, while `DefaultAssetFactory.RegisterSupportedTypes` explicitly registers `.mjs`, proving the original `.js` bundle was never discovered.
+- 2026-07-18T14:04Z [TOOL] In-game screenshot showed the native `InfoRow` three-column sizing plus `noShrinkRight` compressed names to near-unreadable text and overflowed the right link; reusing its original two-column layout avoids both constraints.
 
 [OUTCOMES]
 
@@ -68,3 +70,4 @@
 - 2026-07-17T16:10Z [TOOL] Vehicle-detail feature builds with 0 C# warnings/errors; the UI webpack build and bundle-level row-extension smoke test pass. Deployed matching `Fix-Signatures.dll` (SHA-256 `9F8A1A5B2480F87F4E0896C5C9F3F82432611525DDACE53CDE06612C2772A9A3`), JS (`375E87D03894B3076FB14DB7CE8F1160DD62D20A5F905DF2CE4BB1C405BD8B29`), and CSS (`4C97F848A7F1A21347DC72E11F2ADF9FDB9E4C6F2A50DB5DBFD16CC7589BC9DB`) to the local game mod folder; restart/in-game visual verification remains pending.
 - 2026-07-17T16:24Z [TOOL] Corrected the UI artifact extension to `.mjs`, added a UI registration log marker, reran the built-bundle smoke test successfully, deployed hash-matching SHA-256 `075CCEBB6340DA87601F3A0AF76CBA920525F4A8E6C60BDC0B5231A5F41BB7A6`, and removed the obsolete `.js`; full game restart/retest remains pending.
 - 2026-07-17T16:34Z [TOOL] Reworked the native row into three columns: vehicle name, centered resource cargo/capacity, and clickable state plus distance. UI build/smoke test pass; deployed hash-matching MJS `5960F9985ADBC4B71E1DA7797E67C65A2FFBD6A189B44CA9767D93053119E937` and CSS `183A31DE2034A32E6597B7600FCFED69B78693F19D34A7525C323FD11861AC37`; restart/retest remains pending.
+- 2026-07-18T14:04Z [TOOL] Replaced the failing three-column row with the native two-column layout: full-size name plus compact cargo on the left, clickable state plus smaller distance on the right. UI build/smoke test pass; deployed hash-matching MJS `FAE43CA9C8B1C139769F370DEBF81B31E08507EFEFEBDA9923CA6F1FA8863969` and CSS `9418CE8294A5F186F059D115F7879F5A4B1DFA7006A0A0104F7A7A11B89503C0`; restart/retest remains pending.

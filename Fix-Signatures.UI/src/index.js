@@ -34,6 +34,12 @@ export default function register(moduleRegistry) {
         unit: Unit.Weight
       })
     );
+    const vehicleAndCargo = React.createElement(
+      "span",
+      { className: styles.vehicleAndCargo },
+      originalRow.props.left,
+      cargo
+    );
     const enhancedLink = React.cloneElement(
       originalLink,
       undefined,
@@ -42,14 +48,14 @@ export default function register(moduleRegistry) {
         { className: styles.status },
         originalLink.props.children,
         detail.distance >= 0 && React.createElement(
-          React.Fragment,
-          null,
+          "span",
+          { className: styles.distance },
           React.createElement("span", { className: styles.separator }, "\u00b7"),
           React.createElement(LocalizedNumber, { value: detail.distance, unit: Unit.Length })
         )
       )
     );
 
-    return React.cloneElement(originalRow, { center: cargo, link: enhancedLink, noShrinkRight: true });
+    return React.cloneElement(originalRow, { left: vehicleAndCargo, link: enhancedLink });
   });
 }
