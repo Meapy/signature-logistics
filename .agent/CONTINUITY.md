@@ -51,6 +51,7 @@
 - 2026-07-18T15:43Z [CODE] Completed initial-store metadata, valid Code Mod/UI tags, compatibility/version data, release instructions, UI-inclusive Release packaging, and new Signature Logistics thumbnail artwork.
 - 2026-07-18T15:49Z [TOOL] Published the verified Release package through the official installed ModPublisher and recorded its returned ID for subsequent `NewVersion` uploads.
 - 2026-07-18T16:07Z [CODE] Added the three supplied screenshots to publish metadata, added the planned GitHub external link, and updated README defaults and Paradox download link.
+- 2026-07-18T16:12Z [TOOL] Created public repository `Meapy/signature-logistics`, pushed the complete `master` history, and successfully updated Paradox Mods ID `151747` with the GitHub link and three screenshots.
 
 [DISCOVERIES]
 
@@ -74,6 +75,7 @@
 - 2026-07-18T15:43Z [TOOL] The original Release deploy path contained only managed/native artifacts; adding the two UI files as MSBuild content makes both Release output and publisher deploy folder complete.
 - 2026-07-18T15:49Z [TOOL] Supersedes the cached-metadata portion of the 15:43 discovery above: the live Paradox API rejects tag `UI`; `Code Mod` remains valid, and removing only `UI` allowed publication.
 - 2026-07-18T16:07Z [TOOL] GitHub CLI 2.96.0 is authenticated as `Meapy`; the planned `Meapy/signature-logistics` repository name was available before creation.
+- 2026-07-18T16:12Z [TOOL] ModPublisher resolves relative thumbnail/screenshot paths from its working directory; running `Update` from the managed project directory resolved all media and the server accepted the metadata.
 
 [OUTCOMES]
 
@@ -96,3 +98,4 @@
 - 2026-07-18T15:43Z [TOOL] `Signature Logistics` metadata and 950x500 thumbnail validate locally; pinned npm UI build/smoke test passes, Docker is unavailable, and the complete Release build succeeds with 0 warnings/errors. Release/deploy hashes match for DLL `0BFD6DC78E660F88510B9C27B912C12F255D6ABA16C68F8F1D97B8CC1554C858`, MJS `939027EFAA230C1F54020915A62BC21B2FFDFED6C11A35B87742E24F4495705D`, and CSS `43FC07622776B583C91F17B2FB499FFB477CBAAEB2BA272A70FC55A1146FE15F`; final in-game per-building/save-reload test and the user-authorized upload remain release gates.
 - 2026-07-18T15:49Z [TOOL] Signature Logistics 1.0.0 is publicly published as Paradox Mods ID `151747`; `https://mods.paradoxplaza.com/mods/151747/Windows` returns HTTP 200 with title `Signature Logistics - Paradox Mods`. The upload gate above is complete; in-game save/reload verification remains recommended follow-up testing.
 - 2026-07-18T16:07Z [TOOL] Release build with the included defaults succeeds with 0 warnings/errors; local publish metadata dry-run validates Mod ID `151747`, all three screenshot paths, and the planned GitHub link.
+- 2026-07-18T16:12Z [TOOL] GitHub repository `https://github.com/Meapy/signature-logistics` is public with `master` as its default branch and returns HTTP 200; Paradox Mods `https://mods.paradoxplaza.com/mods/151747/Windows` returns HTTP 200 after its publisher reported a successful metadata update.
