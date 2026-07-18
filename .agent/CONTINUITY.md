@@ -15,6 +15,7 @@
 - 2026-07-18T15:49Z [USER] Publish Signature Logistics to Paradox Mods.
 - 2026-07-18T16:07Z [USER] Create a public GitHub repository, link it from Paradox Mods, and add three supplied in-game screenshots to the store posting.
 - 2026-07-18T16:22Z [USER] Replace the `Codex` author/committer identity on every published commit with the user's GitHub identity.
+- 2026-07-18T16:26Z [USER] Rewrite the Paradox Mods description so players clearly understand the problem addressed and the mod's behavior.
 
 [DECISIONS]
 
@@ -55,6 +56,7 @@
 - 2026-07-18T16:07Z [CODE] Added the three supplied screenshots to publish metadata, added the planned GitHub external link, and updated README defaults and Paradox download link.
 - 2026-07-18T16:12Z [TOOL] Created public repository `Meapy/signature-logistics`, pushed the complete `master` history, and successfully updated Paradox Mods ID `151747` with the GitHub link and three screenshots.
 - 2026-07-18T16:22Z [TOOL] Rewrote all 18 local commits' author and committer fields while preserving commit count, trees, subjects, author dates, and committer dates; retained local recovery branch `backup/pre-user-author-rewrite-20260718`.
+- 2026-07-18T16:26Z [CODE] Reworked store copy around the signature-factory logistics bottleneck, configurable global/per-building controls, saved settings, restocking economy, delivery visibility, and unchanged out-of-scope systems.
 
 [DISCOVERIES]
 
@@ -103,3 +105,4 @@
 - 2026-07-18T16:07Z [TOOL] Release build with the included defaults succeeds with 0 warnings/errors; local publish metadata dry-run validates Mod ID `151747`, all three screenshot paths, and the planned GitHub link.
 - 2026-07-18T16:12Z [TOOL] GitHub repository `https://github.com/Meapy/signature-logistics` is public with `master` as its default branch and returns HTTP 200; Paradox Mods `https://mods.paradoxplaza.com/mods/151747/Windows` returns HTTP 200 after its publisher reported a successful metadata update.
 - 2026-07-18T16:24Z [TOOL] Force-with-lease replaced the published `master` history only after an exact-SHA dry run; GitHub API verified all 19 resulting commits resolve both author and committer to the `Meapy` account.
+- 2026-07-18T16:26Z [TOOL] Paradox ModPublisher accepted the clearer short and long descriptions for live mod ID `151747`; all screenshots and external links were retained.

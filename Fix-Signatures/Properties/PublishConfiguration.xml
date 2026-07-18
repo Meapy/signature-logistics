@@ -4,19 +4,33 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Signature Logistics" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Per-building vehicle, storage, and delivery controls for signature factories." />
+	<ShortDescription Value="Keep signature factories productive with configurable vehicles, storage, restocking, and clearer delivery information." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-Take control of signature-factory logistics without changing ordinary zoned industry.
+Signature factories can stop producing when their small vehicle fleet, limited storage, or missing input materials create a logistics bottleneck. Signature Logistics gives you direct control over those limits so these unique buildings can spend more time producing and less time waiting.
 
-- Set global vehicle, storage, and input-restocking defaults.
-- Save separate vehicle and storage limits on individual signature factories.
-- Reset any factory to the global defaults at any time.
-- Keep required production inputs moving through normal local suppliers and imports.
-- See each active delivery vehicle's cargo and approximate distance to its destination.
+WHAT YOU CAN CONTROL
 
-The game still chooses real suppliers, charges normal costs, and requires a working delivery route.
+- Maximum delivery vehicles: 1-100, default 20.
+- Storage capacity: 10-5,000 tonnes, default 500 tonnes.
+- Input restock target: 25-100%, default 25%.
+- Separate vehicle and storage limits for each signature factory.
+- One-click reset from a building override back to your global defaults.
+
+Open Options &gt; Signature Logistics to set the defaults used by every signature factory. To customize one building, select it, expand Vehicles in use, and adjust its Building limits controls. Your global settings save across game restarts, while building overrides save with the city.
+
+SMARTER RESTOCKING
+
+The mod checks required production inputs and can request more materials before the factory runs dry. Purchases still use the game's normal economy: real local suppliers or outside connections, normal costs, actual delivery vehicles, and a working road route are all required. Resources are never teleported or created for free.
+
+BETTER DELIVERY INFORMATION
+
+Expand Vehicles in use to see each delivery vehicle's current cargo, capacity, and approximate distance to its destination on one row. The original vehicle status link remains clickable.
+
+SCOPE
+
+Only signature-building companies are changed. Ordinary zoned industry, service vehicles, cargo stations, and unrelated buildings keep their normal behavior.
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail-signature-logistics.png" />
