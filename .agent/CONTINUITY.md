@@ -60,6 +60,7 @@
 - 2026-07-18T16:22Z [TOOL] Rewrote all 18 local commits' author and committer fields while preserving commit count, trees, subjects, author dates, and committer dates; retained local recovery branch `backup/pre-user-author-rewrite-20260718`.
 - 2026-07-18T16:26Z [CODE] Reworked store copy around the signature-factory logistics bottleneck, configurable global/per-building controls, saved settings, restocking economy, delivery visibility, and unchanged out-of-scope systems.
 - 2026-07-19T14:22Z [CODE] Moved the controls above Vehicles in use, labeled them `SIGNATURE BUILDING LIMITS`, aligned frontend fallbacks to 20 vehicles/500 tonnes, and prepared version `1.0.1` documentation/metadata.
+- 2026-07-19T14:26Z [TOOL] Opened and merged GitHub PR #1 (`agent/show-building-controls` into `master`) after its exact head was mergeable and GitGuardian passed.
 
 [DISCOVERIES]
 
@@ -111,3 +112,4 @@
 - 2026-07-18T16:24Z [TOOL] Force-with-lease replaced the published `master` history only after an exact-SHA dry run; GitHub API verified all 19 resulting commits resolve both author and committer to the `Meapy` account.
 - 2026-07-18T16:26Z [TOOL] Paradox ModPublisher accepted the clearer short and long descriptions for live mod ID `151747`; all screenshots and external links were retained.
 - 2026-07-19T14:22Z [TOOL] UI build/smoke test passes and asserts controls precede the native Vehicles section; Release build succeeds with 0 warnings/errors and output/deploy DLL, MJS, and CSS hashes match. Paradox 1.0.1 upload remains pending.
+- 2026-07-19T14:26Z [TOOL] Supersedes the pending upload above: Paradox ModPublisher successfully published Signature Logistics `1.0.1` to mod ID `151747` with the verified DLL/MJS/CSS package and updated changelog.
