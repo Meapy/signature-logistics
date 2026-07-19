@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 
 const entity = { index: 42, version: 7 };
 const details = [{ entity, resource: "Chemicals", cargo: 12000, capacity: 25000, distance: 1500 }];
-const limits = { visible: true, overridden: true, maxVehicles: 20, maxStorage: 600, globalMaxVehicles: 10, globalMaxStorage: 300 };
+const limits = { visible: true, overridden: true, maxVehicles: 20, maxStorage: 600, globalMaxVehicles: 20, globalMaxStorage: 500 };
 const triggers = [];
 
 function element(type, props, ...children) {
@@ -72,12 +72,15 @@ assert.equal(row.props.left.props.children[1].props.children[1].type, "Localized
 assert.equal(linkChildren.props.children[0], "Buying");
 assert.equal(linkChildren.props.children[1].props.children[1].type, "LocalizedNumber");
 
-const section = extendVehiclesSection(() => element("OriginalVehiclesSection", null))({});
-const controls = section.props.children[1];
+const OriginalVehiclesSection = () => element("OriginalVehiclesSection", null);
+const section = extendVehiclesSection(OriginalVehiclesSection)({});
+const controls = section.props.children[0];
 const vehicleSlider = controls.props.children[2];
 const storageSlider = controls.props.children[4];
 const resetButton = controls.props.children[5];
 
+assert.equal(controls.props.children[0].props.children[0].props.children, "SIGNATURE BUILDING LIMITS");
+assert.equal(section.props.children[1].type, OriginalVehiclesSection);
 assert.equal(vehicleSlider.type, "Slider");
 assert.equal(vehicleSlider.props.value, 20);
 assert.equal(storageSlider.props.value, 600);

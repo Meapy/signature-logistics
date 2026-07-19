@@ -16,6 +16,7 @@
 - 2026-07-18T16:07Z [USER] Create a public GitHub repository, link it from Paradox Mods, and add three supplied in-game screenshots to the store posting.
 - 2026-07-18T16:22Z [USER] Replace the `Codex` author/committer identity on every published commit with the user's GitHub identity.
 - 2026-07-18T16:26Z [USER] Rewrite the Paradox Mods description so players clearly understand the problem addressed and the mod's behavior.
+- 2026-07-19T14:22Z [USER] Fix per-building controls not being visible when a signature factory is selected.
 
 [DECISIONS]
 
@@ -39,6 +40,7 @@
 - 2026-07-18T16:07Z [USER] Include the existing local defaults change in the GitHub publication: 20 vehicles, 500 tonnes, and 25% input restocking.
 - 2026-07-18T16:07Z [CODE] Use `https://github.com/Meapy/signature-logistics` as the canonical public source link and retain the supplied PNGs without visual modification.
 - 2026-07-18T16:22Z [CODE] Use verified GitHub identity `Daniel Krasovski <44982407+Meapy@users.noreply.github.com>` for all existing and future repository commits.
+- 2026-07-19T14:22Z [CODE] Render signature-building controls before the native Vehicles section so long expanded vehicle lists cannot push them out of view; retain the existing signature-only backend visibility guard.
 
 [PROGRESS]
 
@@ -57,6 +59,7 @@
 - 2026-07-18T16:12Z [TOOL] Created public repository `Meapy/signature-logistics`, pushed the complete `master` history, and successfully updated Paradox Mods ID `151747` with the GitHub link and three screenshots.
 - 2026-07-18T16:22Z [TOOL] Rewrote all 18 local commits' author and committer fields while preserving commit count, trees, subjects, author dates, and committer dates; retained local recovery branch `backup/pre-user-author-rewrite-20260718`.
 - 2026-07-18T16:26Z [CODE] Reworked store copy around the signature-factory logistics bottleneck, configurable global/per-building controls, saved settings, restocking economy, delivery visibility, and unchanged out-of-scope systems.
+- 2026-07-19T14:22Z [CODE] Moved the controls above Vehicles in use, labeled them `SIGNATURE BUILDING LIMITS`, aligned frontend fallbacks to 20 vehicles/500 tonnes, and prepared version `1.0.1` documentation/metadata.
 
 [DISCOVERIES]
 
@@ -81,6 +84,7 @@
 - 2026-07-18T15:49Z [TOOL] Supersedes the cached-metadata portion of the 15:43 discovery above: the live Paradox API rejects tag `UI`; `Code Mod` remains valid, and removing only `UI` allowed publication.
 - 2026-07-18T16:07Z [TOOL] GitHub CLI 2.96.0 is authenticated as `Meapy`; the planned `Meapy/signature-logistics` repository name was available before creation.
 - 2026-07-18T16:12Z [TOOL] ModPublisher resolves relative thumbnail/screenshot paths from its working directory; running `Update` from the managed project directory resolved all media and the server accepted the metadata.
+- 2026-07-19T14:22Z [TOOL] Current logs prove the subscribed 1.0.0 DLL and MJS loaded with no Signature Logistics UI exception; the wrapper placed controls after the entire Vehicles section, making them effectively hidden beneath factories with long vehicle lists.
 
 [OUTCOMES]
 
@@ -106,3 +110,4 @@
 - 2026-07-18T16:12Z [TOOL] GitHub repository `https://github.com/Meapy/signature-logistics` is public with `master` as its default branch and returns HTTP 200; Paradox Mods `https://mods.paradoxplaza.com/mods/151747/Windows` returns HTTP 200 after its publisher reported a successful metadata update.
 - 2026-07-18T16:24Z [TOOL] Force-with-lease replaced the published `master` history only after an exact-SHA dry run; GitHub API verified all 19 resulting commits resolve both author and committer to the `Meapy` account.
 - 2026-07-18T16:26Z [TOOL] Paradox ModPublisher accepted the clearer short and long descriptions for live mod ID `151747`; all screenshots and external links were retained.
+- 2026-07-19T14:22Z [TOOL] UI build/smoke test passes and asserts controls precede the native Vehicles section; Release build succeeds with 0 warnings/errors and output/deploy DLL, MJS, and CSS hashes match. Paradox 1.0.1 upload remains pending.

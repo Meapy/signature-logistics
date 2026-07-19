@@ -4,7 +4,13 @@ import { LocalizedFraction, LocalizedNumber, Unit } from "cs2/l10n";
 import styles from "./vehicle-details.css";
 
 const vehicleDetails$ = bindValue("SignatureFix", "vehicleDetails", []);
-const buildingLimits$ = bindValue("SignatureFix", "buildingLimits", { visible: false });
+const buildingLimits$ = bindValue("SignatureFix", "buildingLimits", {
+  visible: false,
+  maxVehicles: 20,
+  maxStorage: 500,
+  globalMaxVehicles: 20,
+  globalMaxStorage: 500
+});
 const vehiclesModule = "game-ui/game/components/selected-info-panel/selected-info-sections/shared-sections/vehicles-section/vehicles-section.tsx";
 const sliderModule = "game-ui/common/input/slider/slider.tsx";
 
@@ -19,16 +25,16 @@ export default function register(moduleRegistry) {
 
   moduleRegistry.extend(vehiclesModule, "VehiclesSection", (OriginalVehiclesSection) => (props) => {
     const limits = useValue(buildingLimits$);
-    const [maxVehicles, setMaxVehicles] = React.useState(limits.maxVehicles ?? 10);
-    const [maxStorage, setMaxStorage] = React.useState(limits.maxStorage ?? 300);
+    const [maxVehicles, setMaxVehicles] = React.useState(limits.maxVehicles ?? 20);
+    const [maxStorage, setMaxStorage] = React.useState(limits.maxStorage ?? 500);
     const vehiclesRef = React.useRef(maxVehicles);
     const storageRef = React.useRef(maxStorage);
     const vehicleSteps = useStepTransformer(1);
     const storageSteps = useStepTransformer(10);
 
     React.useEffect(() => {
-      vehiclesRef.current = limits.maxVehicles ?? 10;
-      storageRef.current = limits.maxStorage ?? 300;
+      vehiclesRef.current = limits.maxVehicles ?? 20;
+      storageRef.current = limits.maxStorage ?? 500;
       setMaxVehicles(vehiclesRef.current);
       setMaxStorage(storageRef.current);
     }, [limits.maxVehicles, limits.maxStorage, limits.overridden]);
@@ -54,14 +60,13 @@ export default function register(moduleRegistry) {
     return React.createElement(
       React.Fragment,
       null,
-      React.createElement(OriginalVehiclesSection, props),
       limits.visible && React.createElement(
         "div",
         { className: styles.buildingLimits },
         React.createElement(
           "div",
           { className: styles.limitsHeader },
-          React.createElement("span", null, "BUILDING LIMITS"),
+          React.createElement("span", null, "SIGNATURE BUILDING LIMITS"),
           React.createElement("span", { className: limits.overridden ? styles.custom : styles.global }, limits.overridden ? "Custom" : "Using global defaults")
         ),
         React.createElement(
@@ -91,7 +96,8 @@ export default function register(moduleRegistry) {
           onChange: changeStorage
         }),
         limits.overridden && React.createElement("button", { className: styles.resetButton, onClick: reset }, "Use global defaults")
-      )
+      ),
+      React.createElement(OriginalVehiclesSection, props)
     );
   });
 
