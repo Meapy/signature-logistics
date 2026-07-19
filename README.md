@@ -16,7 +16,7 @@ Open **Options > Signature Logistics** and configure:
 
 Changes save automatically, load on the next game start, and act as the defaults for existing signature buildings and buildings placed later.
 
-To customize one building, select a signature factory and expand **Vehicles in use**. The **Building limits** controls immediately save a vehicle and storage override on that building in the current city. **Use global defaults** removes the override and returns that building to the Options values.
+To customize one building, select a signature factory. The **Signature building limits** controls appear immediately above **Vehicles in use** and save a vehicle and storage override on that building in the current city. **Use global defaults** removes the override and returns that building to the Options values.
 
 When a required production input plus deliveries already on the way falls below the restock target, the mod asks the game's normal purchase system for another truckload. The game still uses real local suppliers or outside connections, pays normal costs, and requires a working delivery route.
 
@@ -50,7 +50,7 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 ## Publish to Paradox Mods
 
-The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, uses version `1.0.0`, and has no mod or DLC dependencies.
+The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, uses version `1.0.1`, and has no mod or DLC dependencies.
 
 1. Run the UI test/build first: `npm test` in `Fix-Signatures.UI` (or use the Docker command above).
 2. For later releases, increment `ModVersion`, update `ChangeLog`, and publish the managed project with the `PublishNewVersion` profile in Visual Studio. The Release build refuses to package without the UI bundle and includes the `.mjs` and `.css` beside the DLL automatically.

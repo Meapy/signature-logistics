@@ -18,7 +18,7 @@ WHAT YOU CAN CONTROL
 - Separate vehicle and storage limits for each signature factory.
 - One-click reset from a building override back to your global defaults.
 
-Open Options &gt; Signature Logistics to set the defaults used by every signature factory. To customize one building, select it, expand Vehicles in use, and adjust its Building limits controls. Your global settings save across game restarts, while building overrides save with the city.
+Open Options &gt; Signature Logistics to set the defaults used by every signature factory. To customize one building, select it and use the Signature building limits controls shown immediately above Vehicles in use. Your global settings save across game restarts, while building overrides save with the city.
 
 SMARTER RESTOCKING
 
@@ -40,11 +40,11 @@ Only signature-building companies are changed. Ordinary zoned industry, service 
 	<Screenshot Value="Properties/Screenshots/building-logistics.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.0" />
+	<ModVersion Value="1.0.1" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Initial release: configurable global and per-building vehicle/storage limits, priority input restocking, and active delivery cargo/distance details." />
+	<ChangeLog Value="Fixed per-building controls being hidden below long vehicle lists. Signature building limits now appear immediately above Vehicles in use, with UI fallbacks matching the current 20-vehicle and 500-tonne defaults." />
 	<!--<ChangeLog>
 	</ChangeLog>-->
 	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />
