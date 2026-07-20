@@ -24,6 +24,7 @@ namespace SignatureFix
         private SimulationSystem m_SimulationSystem;
 
         private const uint BankruptcyGraceFrames = 65536;
+        private const int MinimumTruckFillPercent = 75;
 
         // ponytail: still 4x faster than vanilla company buying; add per-company failure backoff only if profiling justifies its state.
         public override int GetUpdateInterval(SystemUpdatePhase phase) => 64;
@@ -224,22 +225,55 @@ namespace SignatureFix
             if (storageShares == 0)
                 return false;
 
-            int targetAmount = storageLimit / storageShares * targetPercent / 100;
+            int inputCount = 0;
+            int totalInputWeight = 0;
+            if (process.m_Input1.m_Resource != Resource.NoResource)
+            {
+                inputCount++;
+                totalInputWeight += Unity.Mathematics.math.max(1, process.m_Input1.m_Amount);
+            }
+            if (process.m_Input2.m_Resource != Resource.NoResource)
+            {
+                inputCount++;
+                totalInputWeight += Unity.Mathematics.math.max(1, process.m_Input2.m_Amount);
+            }
+            if (inputCount == 0)
+                return false;
+
+            int totalInputTarget = (int)Unity.Mathematics.math.min(
+                int.MaxValue,
+                (long)storageLimit * inputCount * targetPercent / (storageShares * 100L));
             Resource resource = Resource.NoResource;
-            int availableAmount = int.MaxValue;
+            int availableAmount = 0;
+            int selectedTarget = 0;
+            long incomingAmount = 0;
 
             // ponytail: two inputs are the native process limit, so a tiny direct comparison is clearer than a collection.
-            SelectLowerStockInput(company, process.m_Input1.m_Resource, targetAmount, ref resource, ref availableAmount, ref deliveryTrucks, ref layouts);
-            SelectLowerStockInput(company, process.m_Input2.m_Resource, targetAmount, ref resource, ref availableAmount, ref deliveryTrucks, ref layouts);
-            if (resource == Resource.NoResource || availableAmount >= targetAmount)
+            SelectLowerStockInput(company, process.m_Input1, totalInputTarget, totalInputWeight, ref resource, ref availableAmount, ref selectedTarget, ref incomingAmount, ref deliveryTrucks, ref layouts);
+            SelectLowerStockInput(company, process.m_Input2, totalInputTarget, totalInputWeight, ref resource, ref availableAmount, ref selectedTarget, ref incomingAmount, ref deliveryTrucks, ref layouts);
+            if (resource == Resource.NoResource)
                 return false;
 
             truckSelectData.GetCapacityRange(resource, out _, out int maxTruckCapacity);
-            int amountNeeded = Unity.Mathematics.math.min(targetAmount - availableAmount, maxTruckCapacity);
+            long occupiedAmount = incomingAmount;
+            foreach (Resources storedResource in EntityManager.GetBuffer<Resources>(company, true))
+            {
+                if (storedResource.m_Resource != Resource.Money && storedResource.m_Resource != Resource.NoResource)
+                    occupiedAmount += Unity.Mathematics.math.max(0, storedResource.m_Amount);
+            }
+            int storageHeadroom = (int)Unity.Mathematics.math.clamp((long)storageLimit - occupiedAmount, 0L, int.MaxValue);
+            int amountNeeded = GetFullLoadPurchaseAmount(maxTruckCapacity, storageHeadroom);
+            if (amountNeeded == 0)
+                return false;
+
             float unitPrice = EconomyUtils.GetIndustrialPrice(resource, resourcePrefabs, ref resourceDatas);
             // Keep priority restocking from spending the company's remaining bankruptcy cushion.
             if (!IsPriorityPurchaseSafe(companyWorth, bankruptcyLimit, unitPrice, amountNeeded))
-                return false;
+            {
+                amountNeeded = GetMinimumTruckLoad(maxTruckCapacity);
+                if (amountNeeded > storageHeadroom || !IsPriorityPurchaseSafe(companyWorth, bankruptcyLimit, unitPrice, amountNeeded))
+                    return false;
+            }
 
             EntityManager.AddComponentData(company, new ResourceBuyer
             {
@@ -295,6 +329,32 @@ namespace SignatureFix
 
             long purchaseReserve = (long)Unity.Mathematics.math.ceil(Unity.Mathematics.math.max(0f, unitPrice) * amount);
             return companyWorth - purchaseReserve >= bankruptcyLimit;
+        }
+
+        internal static int GetMinimumTruckLoad(int maxTruckCapacity)
+        {
+            return maxTruckCapacity > 0
+                ? (int)(((long)maxTruckCapacity * MinimumTruckFillPercent + 99) / 100)
+                : 0;
+        }
+
+        internal static int GetFullLoadPurchaseAmount(int maxTruckCapacity, int storageHeadroom)
+        {
+            int amount = Unity.Mathematics.math.min(maxTruckCapacity, Unity.Mathematics.math.max(0, storageHeadroom));
+            return amount >= GetMinimumTruckLoad(maxTruckCapacity) ? amount : 0;
+        }
+
+        internal static int GetInputTargetAmount(int totalInputTarget, int inputWeight, int totalInputWeight)
+        {
+            return totalInputTarget > 0 && inputWeight > 0 && totalInputWeight > 0
+                ? (int)Unity.Mathematics.math.min(int.MaxValue, (long)totalInputTarget * inputWeight / totalInputWeight)
+                : 0;
+        }
+
+        internal static bool ShouldSelectInput(int candidateAmount, int candidateTarget, int selectedAmount, int selectedTarget)
+        {
+            return candidateTarget > 0 && candidateAmount < candidateTarget &&
+                (selectedTarget <= 0 || (long)candidateAmount * selectedTarget < (long)selectedAmount * candidateTarget);
         }
 
         private SignatureCompanyHistory ObserveCompany(Entity building, Entity company)
@@ -367,33 +427,45 @@ namespace SignatureFix
 
         private void SelectLowerStockInput(
             Entity company,
-            Resource candidate,
-            int targetAmount,
+            ResourceStack candidate,
+            int totalInputTarget,
+            int totalInputWeight,
             ref Resource selected,
             ref int selectedAmount,
+            ref int selectedTarget,
+            ref long incomingAmount,
             ref ComponentLookup<Game.Vehicles.DeliveryTruck> deliveryTrucks,
             ref BufferLookup<LayoutElement> layouts)
         {
-            if (candidate == Resource.NoResource)
+            if (candidate.m_Resource == Resource.NoResource)
                 return;
 
-            int amount = EconomyUtils.GetResources(candidate, EntityManager.GetBuffer<Resources>(company, true));
-            if (amount >= targetAmount)
-                return;
+            int targetAmount = GetInputTargetAmount(
+                totalInputTarget,
+                Unity.Mathematics.math.max(1, candidate.m_Amount),
+                totalInputWeight);
+            int storedAmount = Unity.Mathematics.math.max(
+                0,
+                EconomyUtils.GetResources(candidate.m_Resource, EntityManager.GetBuffer<Resources>(company, true)));
+            long amount = storedAmount;
 
             foreach (TripNeeded trip in EntityManager.GetBuffer<TripNeeded>(company, true))
             {
-                if ((trip.m_Purpose == Purpose.Shopping || trip.m_Purpose == Purpose.CompanyShopping) && trip.m_Resource == candidate)
-                    amount += trip.m_Data;
+                if ((trip.m_Purpose == Purpose.Shopping || trip.m_Purpose == Purpose.CompanyShopping) &&
+                    trip.m_Resource == candidate.m_Resource)
+                    amount += Unity.Mathematics.math.max(0, trip.m_Data);
             }
 
             foreach (OwnedVehicle ownedVehicle in EntityManager.GetBuffer<OwnedVehicle>(company, true))
-                amount += VehicleUtils.GetBuyingTrucksLoad(ownedVehicle.m_Vehicle, candidate, ref deliveryTrucks, ref layouts);
+                amount += Unity.Mathematics.math.max(0, VehicleUtils.GetBuyingTrucksLoad(ownedVehicle.m_Vehicle, candidate.m_Resource, ref deliveryTrucks, ref layouts));
 
-            if (amount < selectedAmount)
+            int availableAmount = (int)Unity.Mathematics.math.min(amount, int.MaxValue);
+            incomingAmount += availableAmount - storedAmount;
+            if (ShouldSelectInput(availableAmount, targetAmount, selectedAmount, selectedTarget))
             {
-                selected = candidate;
-                selectedAmount = amount;
+                selected = candidate.m_Resource;
+                selectedAmount = availableAmount;
+                selectedTarget = targetAmount;
             }
         }
     }
