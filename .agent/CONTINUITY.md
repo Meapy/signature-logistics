@@ -27,6 +27,9 @@
 - 2026-07-20T15:09Z [USER] Investigate why signature-building companies change frequently and reduce avoidable bankruptcies/company churn; deploy a test build but do not publish before user confirmation.
 - 2026-07-20T15:49Z [USER] Add a row beneath the Company section showing why the previous signature-building tenant left, and replace the unrecorded catch-all with every reliably detectable cause.
 - 2026-07-20T16:20Z [USER] Publish the completed company-stability and departure-history feature, update documentation and the Paradox Mods page, push it to GitHub, and merge it.
+- 2026-07-20T16:53Z [USER] Create a transferable Codex skill from the Cities: Skylines II mod-development lessons and install it for future mod projects.
+- 2026-07-20T17:15Z [USER] Give each signature-company tenant twice its vanilla starting resources after move-in, superseding the initial request to double starting money; deploy locally for testing without publishing.
+- 2026-07-20T18:19Z [USER] Publish the tested starting-resource feature to Paradox Mods, push it to GitHub, and merge it.
 
 [DECISIONS]
 
@@ -58,6 +61,8 @@
 - 2026-07-20T15:09Z [CODE] Before the mod queues a priority input purchase, reserve that truckload's industrial value and require the remaining company worth to stay at or above the game bankruptcy limit; native company buying remains available.
 - 2026-07-20T15:49Z [CODE] Persist current, pending, and previous tenant state on each signature building; record the strongest active warning at mature bankruptcy, distinguish rent/property relocation, and use `External/load replacement` only when the game leaves no observable cause.
 - 2026-07-20T15:49Z [CODE] Wrap the native `Game.UI.InGame.CompanySection` through the existing selected-info component map and render one native `Previous company left` row immediately after it; show `No departure recorded` until a future observed change occurs.
+- 2026-07-20T16:53Z [CODE] Package the reusable workflow as personal skill `build-cities-skylines-2-mods`, separating concise core instructions from ECS/game-code, UI/persistence, and build/publish references plus two deterministic PowerShell helpers; exclude proprietary assemblies and machine-specific paths.
+- 2026-07-20T17:15Z [CODE] Use saved `SignatureCompanyHistory.m_CurrentCompany` transitions as the one-time move-in gate; duplicate every positive non-money resource stack with integer saturation, leave bank balance unchanged, and treat a missing history component as the current tenant's first observation so existing pre-feature cities receive the boost once.
 
 [PROGRESS]
 
@@ -89,6 +94,8 @@
 - 2026-07-20T15:09Z [CODE] Added exact company-worth evaluation, mature-bankruptcy discrimination, non-bankruptcy tenant protection, a bankruptcy-cushion check for priority purchases, an event log, documentation, and an eight-case compiled-assembly boundary check.
 - 2026-07-20T15:49Z [CODE] Added serializable `SignatureCompanyHistory`, bankruptcy-warning and property-relocation classification, a throttled UI binding, an idempotent Company-section wrapper, updated smoke/boundary checks, and player/build documentation.
 - 2026-07-20T16:20Z [CODE] Prepared Paradox Mods version `1.0.3` with clearer stability/history explanations, an updated changelog, and matching repository version documentation.
+- 2026-07-20T18:23Z [CODE] Prepared version `1.0.4` store metadata and documentation for the one-time doubled non-money starting-resource grant.
+- 2026-07-20T18:23Z [TOOL] The exact staged 1.0.4 package passed the UI production build/smoke test, a 0-warning/0-error managed Release build, 18 compiled checks, and release verification; hashes are DLL `C382430F072275304121415F49E686C7002CBBD9914F4266EA990259D3D9D5E3`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
 
 [DISCOVERIES]
 
@@ -124,6 +131,7 @@
 - 2026-07-20T15:09Z [TOOL] Installed `ResourceBuyerSystem` subtracts a company's complete purchase price without the household-style cash cap; aggressive priority restocking can therefore consume the remaining cushion through purchase and transport costs even though inventory retains asset value.
 - 2026-07-20T15:49Z [TOOL] Installed `Game.dll` defines detailed household `MoveAwayReason` values, but `CompanyMoveAwaySystem` initializes `MovingAway` to its default `None` for both random churn and bankruptcy; company causes must be inferred from exact worth/timer state and active company/workforce warnings.
 - 2026-07-20T15:49Z [TOOL] `PropertyProcessingSystem`, `PropertyRenterSystem`, and `RentAdjustSystem` can remove a company's `PropertyRenter` link independently of `CompanyMoveAwaySystem`; that observable path is classified as rent/property relocation. Remaining unobservable paths are serialization repair/migration, debug tooling, another mod, or removal while this mod was absent.
+- 2026-07-20T17:15Z [TOOL] Installed `Game.Citizens.CompanyInitializeSystem.InitializeCompanyJob` seeds industrial processing companies with 15,000 units of each input, commercial processing companies with 3,000, and eligible output/extractor stock with 1,000; `AddStartingResources` also charges Money for inputs, and there is no company-starting-capital economy parameter.
 
 [OUTCOMES]
 
@@ -158,3 +166,5 @@
 - 2026-07-20T15:49Z [TOOL] Company-history UI build/smoke test passes; final managed Release builds and post-processes with 0 warnings/errors, 13 compiled bankruptcy/affordability/history checks pass, and deployed local hashes match DLL `20EDCE80AC91CED779198F09F9F1E7F782A929E0C8CB2441E7645E515FB43366`, MJS `D6A893863B142F6E481A20C80A39E3E5E2C9A5374F6B101C781C4D7BA702771C`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Restart/UI/save-reload testing remains required; nothing was pushed or published.
 - 2026-07-20T16:34Z [TOOL] GitHub PR #3 passed GitGuardian and merged the company-stability, departure-history, and 1.0.3 release commits into `master` as `afd3786ff4c5b311e24eceb7102a5929a9aa28c5`; all commits resolve to Daniel Krasovski/Meapy.
 - 2026-07-20T16:34Z [TOOL] Paradox ModPublisher successfully published Signature Logistics `1.0.3` to mod ID `151747` with the revised description, changelog, GitHub link, and four screenshots. The exact staged package passed the UI smoke test, a 0-warning/0-error managed Release build, 13 compiled checks, and hashes DLL `F8FE26DFBCC6505F67DF1C79DC35A5826E9405C17D6BD041C539985969597107`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. The public page returns HTTP 200 with title `Signature Logistics - Paradox Mods`.
+- 2026-07-20T16:53Z [TOOL] Installed `build-cities-skylines-2-mods` to `C:\Users\dkras\.codex\skills\build-cities-skylines-2-mods`; the official quick validator passes in the final location, all seven installed files hash-match the validated source, environment discovery succeeds against the installed toolchain, and release verification passes both present-file and expected missing-file checks.
+- 2026-07-20T17:15Z [TOOL] Starting-resource test Release builds/post-processes with 0 warnings/errors, 18 compiled helper checks pass, and the local test deployment matches DLL `A0362C510C19B3AABB6FDA6ECDEE99B28D3B0A96D298329E5079D587A3F41ABB`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Cities2 was running during deployment; restart/in-game move-in verification remains required and nothing was pushed or published.

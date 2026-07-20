@@ -22,6 +22,8 @@ When a required production input plus deliveries already on the way falls below 
 
 Signature tenants are also protected from the game's random tax and worker-shortage move-away rolls, which use the same internal marker as bankruptcy and can otherwise replace a company even when it is financially viable. Genuine bankruptcy is still possible when a company remains below the game's bankruptcy threshold for the full grace period.
 
+Each newly observed signature tenant receives a second copy of its non-money starting resources. This doubles the vanilla input and output stacks available immediately after move-in without changing the company's bank balance. Saved tenant history prevents the grant from repeating after save/reload.
+
 The **Company** section on a selected signature factory shows why its previous tenant left. The history saves with the city and reports the strongest active warning observed at bankruptcy: missing materials, no customers, educated-worker shortage, general worker shortage, or other losses. Rent and property-capacity changes that remove the tenant link are recorded as **Relocated: Rent/property change**. A tenant change that bypasses both normal paths is labeled **External/load replacement** because save repair, debug tools, another mod, or a departure from before this version does not leave a reliable cause to reconstruct. Buildings without a recorded change show **No departure recorded**.
 
 Only signature-building companies are changed. Service vehicle capacities, ordinary zoned companies, and cargo stations are left untouched. Signature factories are unique buildings; their dedicated company prefab consumes the saved building-specific limits.
@@ -54,7 +56,7 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 ## Publish to Paradox Mods
 
-The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.0.3`, and has no mod or DLC dependencies.
+The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.0.4`, and has no mod or DLC dependencies.
 
 1. Run the UI test/build first: `npm test` in `Fix-Signatures.UI` (or use the Docker command above).
 2. For later releases, increment `ModVersion`, update `ChangeLog`, and publish the managed project with the `PublishNewVersion` profile in Visual Studio. The Release build refuses to package without the UI bundle and includes the `.mjs` and `.css` beside the DLL automatically.

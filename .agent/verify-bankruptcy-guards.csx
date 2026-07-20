@@ -19,7 +19,8 @@ var observeMethod = type.GetMethod(
     new[] { typeof(SignatureCompanyHistory), typeof(Entity), typeof(CompanyDepartureReason) },
     null);
 var reasonMethod = typeof(VehicleDetailsUISystem).GetMethod("GetDepartureReason", flags);
-if (purchaseMethod == null || bankruptcyMethod == null || observeMethod == null || reasonMethod == null)
+var startingResourceMethod = type.GetMethod("GetStartingResourceBonus", flags);
+if (purchaseMethod == null || bankruptcyMethod == null || observeMethod == null || reasonMethod == null || startingResourceMethod == null)
     throw new Exception("Compiled guard helper missing.");
 
 bool Safe(int worth, int limit, float price, int amount) =>
@@ -27,6 +28,9 @@ bool Safe(int worth, int limit, float price, int amount) =>
 
 bool Bankrupt(int worth, int limit, uint since, uint frame) =>
     (bool)bankruptcyMethod.Invoke(null, new object[] { worth, limit, since, frame });
+
+int StartingResourceBonus(int amount) =>
+    (int)startingResourceMethod.Invoke(null, new object[] { amount });
 
 if (!Safe(1000, 500, 2f, 250)) throw new Exception("Purchase at the threshold should be allowed.");
 if (Safe(999, 500, 2f, 250)) throw new Exception("Purchase below the threshold should be blocked.");
@@ -37,6 +41,12 @@ if (Bankrupt(500, 500, 1, 65538)) throw new Exception("A solvent company must no
 if (Bankrupt(499, 500, 0, 65537)) throw new Exception("A company without a low-income timer must not be bankrupt.");
 if (Bankrupt(499, 500, 1, 65537)) throw new Exception("The complete grace period must be preserved.");
 if (!Bankrupt(499, 500, 1, 65538)) throw new Exception("A mature genuine bankruptcy must be allowed.");
+
+if (StartingResourceBonus(15000) != 15000) throw new Exception("A normal starting resource stack must be doubled.");
+if (StartingResourceBonus(0) != 0) throw new Exception("An empty starting resource stack must remain empty.");
+if (StartingResourceBonus(-1) != 0) throw new Exception("A negative resource amount must not receive a bonus.");
+if (StartingResourceBonus(int.MaxValue) != 0) throw new Exception("A full resource stack must not overflow.");
+if (StartingResourceBonus(int.MaxValue - 10) != 10) throw new Exception("A large resource stack must clamp at the integer limit.");
 
 var first = new Entity { Index = 10, Version = 1 };
 var second = new Entity { Index = 11, Version = 1 };
@@ -56,4 +66,4 @@ if (history.m_LastReason != CompanyDepartureReason.PropertyRelocation)
 if ((string)reasonMethod.Invoke(null, new object[] { history.m_LastReason }) != "Relocated: Rent/property change")
     throw new Exception("The relocation reason must have a player-facing label.");
 
-Console.WriteLine("Bankruptcy, affordability, and company-history checks passed (13/13).");
+Console.WriteLine("Bankruptcy, affordability, starting-resource, and company-history checks passed (18/18).");
