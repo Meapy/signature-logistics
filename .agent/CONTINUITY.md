@@ -33,6 +33,7 @@
 - 2026-07-20T18:31Z [USER] Make signature-company buying more aggressive and efficient: balance imports by recipe needs, prefer a full truck even when it overshoots the exact deficit, and avoid intentionally buying less than 75% of vehicle capacity.
 - 2026-07-20T18:31Z [USER] Publish the completed smarter-restocking feature to Paradox Mods, push it to GitHub, and merge it.
 - 2026-07-20T19:00Z [USER] Version 1.0.5 still produces many returning buying trucks carrying roughly 0-1.5 tonnes; stop the low-capacity purchase flood.
+- 2026-07-20T19:41Z [USER] Publish the locally tested partial-load fix to Paradox Mods, push it to GitHub, and merge it.
 
 [DECISIONS]
 
@@ -108,6 +109,8 @@
 - 2026-07-20T19:00Z [CODE] Replaced cargo-only in-flight accounting with empty-truck capacity reservations and made supplemental priority restocking import-only; added four compiled reservation checks and updated behavior documentation.
 - 2026-07-20T19:05Z [TOOL] The initial staged partial-load build passed 36 checks with DLL `D068D27214832DC506BAEB46CA6C9A35DF66D2ED13C343E57948EC8C4504B26D`; it is superseded by the final settings-copy rebuild below.
 - 2026-07-20T19:09Z [TOOL] The final staged partial-load fix builds and Unity-post-processes with 0 warnings/errors; 36 compiled behavior checks and exact-package verification pass with DLL `2795AEAE854E28D4849C622137F4B3E0031B1CEFB120E067A3E642BEB83F825A`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Cities2 remains running as PID 47064, so live-folder deployment is pending a safe game close/restart and nothing is published.
+- 2026-07-20T19:41Z [CODE] Prepared Paradox Mods version `1.0.6` with corrected in-flight reservation and dependable full-load priority-import store copy, changelog, and repository release documentation.
+- 2026-07-20T19:43Z [TOOL] The exact staged 1.0.6 package passed a 0-warning/0-error managed Release build, Unity post-processing, 36 compiled behavior checks, and release verification; hashes are DLL `D9A4C5143B31466D161D3BBF7C1E80FDC64C664DB0B1D54555E9FBF5718F2537`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
 
 [DISCOVERIES]
 
