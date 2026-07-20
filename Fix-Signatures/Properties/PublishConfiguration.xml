@@ -4,7 +4,7 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Signature Logistics" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Keep signature factories productive with configurable vehicles, storage, restocking, and clearer delivery information." />
+	<ShortDescription Value="Stabilize signature factories with configurable logistics, safer restocking, fewer company replacements, and clearer delivery information." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
@@ -18,7 +18,17 @@ WHAT YOU CAN CONTROL
 - Separate vehicle and storage limits for each signature factory.
 - One-click reset from a building override back to your global defaults.
 
-Open Options &gt; Signature Logistics to set the defaults used by every signature factory. To customize one building, select it and use the Signature building limits controls shown immediately above Vehicles in use. Your global settings save across game restarts, while building overrides save with the city.
+Open Options &gt; Signature Logistics to set the defaults used by every signature factory. To customize one building, select it and use the Building logistics controls shown immediately above Vehicles in use. Your global settings save across game restarts, while building overrides save with the city.
+
+MORE STABLE COMPANIES
+
+The game can use the same internal move-away marker for genuine bankruptcy and random tax or worker-shortage churn. Signature Logistics preserves a signature tenant through the random churn path while still allowing genuine bankruptcy after the company's total worth stays below the game's threshold for the full grace period.
+
+Priority restocking also checks the company's exact game-calculated worth before ordering. The mod pauses its extra purchase when that truckload would consume the remaining bankruptcy cushion; normal production, selling, and the game's own economy continue.
+
+WHY THE PREVIOUS COMPANY LEFT
+
+The Company section records the previous signature tenant's departure reason and saves it with the city. It can report bankruptcy with missing materials, no customers, educated-worker shortage, general worker shortage, or other losses; rent/property relocation; and an explicit external/load replacement fallback when the game leaves no reliable cause.
 
 SMARTER RESTOCKING
 
@@ -41,11 +51,11 @@ Only signature-building companies are changed. Ordinary zoned industry, service 
 	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.2" />
+	<ModVersion Value="1.0.3" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Fixed per-building vehicle and storage controls not appearing for signature factories. The controls now resolve the selected factory correctly, render once in a compact native panel, save custom limits, and provide a clear Use global reset action." />
+	<ChangeLog Value="Reduced avoidable signature-company replacements by separating random tax/worker move-away churn from genuine bankruptcy. Priority restocking now preserves the game's bankruptcy cushion. Added saved previous-company departure reasons beneath the Company section, including bankruptcy warnings, rent/property relocation, and external/load replacement." />
 	<!--<ChangeLog>
 	</ChangeLog>-->
 	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />

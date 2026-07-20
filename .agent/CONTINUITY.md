@@ -26,6 +26,7 @@
 - 2026-07-20T14:29Z [USER] Publish the confirmed fix, push and merge it on GitHub, publish it to Paradox Mods, and add the supplied final in-game screenshot to the store page.
 - 2026-07-20T15:09Z [USER] Investigate why signature-building companies change frequently and reduce avoidable bankruptcies/company churn; deploy a test build but do not publish before user confirmation.
 - 2026-07-20T15:49Z [USER] Add a row beneath the Company section showing why the previous signature-building tenant left, and replace the unrecorded catch-all with every reliably detectable cause.
+- 2026-07-20T16:20Z [USER] Publish the completed company-stability and departure-history feature, update documentation and the Paradox Mods page, push it to GitHub, and merge it.
 
 [DECISIONS]
 
@@ -87,6 +88,7 @@
 - 2026-07-20T14:29Z [TOOL] Docker is not installed; the pinned local UI build/smoke test passed. The managed Release staged outside the running game's locked mod folder with 0 warnings/errors; validated package hashes are DLL `C5532765F36AA145FDB36285DEC6CF93987DD23358510E2AC600512831D78D79`, MJS `714224FC9D430FD7185659432D4ED53D57F972116AC61CA6389BCB0ACD7D0B63`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
 - 2026-07-20T15:09Z [CODE] Added exact company-worth evaluation, mature-bankruptcy discrimination, non-bankruptcy tenant protection, a bankruptcy-cushion check for priority purchases, an event log, documentation, and an eight-case compiled-assembly boundary check.
 - 2026-07-20T15:49Z [CODE] Added serializable `SignatureCompanyHistory`, bankruptcy-warning and property-relocation classification, a throttled UI binding, an idempotent Company-section wrapper, updated smoke/boundary checks, and player/build documentation.
+- 2026-07-20T16:20Z [CODE] Prepared Paradox Mods version `1.0.3` with clearer stability/history explanations, an updated changelog, and matching repository version documentation.
 
 [DISCOVERIES]
 
