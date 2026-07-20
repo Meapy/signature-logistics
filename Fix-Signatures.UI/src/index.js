@@ -12,7 +12,15 @@ const buildingLimits$ = bindValue("SignatureFix", "buildingLimits", {
   globalMaxStorage: 500
 });
 const vehiclesModule = "game-ui/game/components/selected-info-panel/selected-info-sections/shared-sections/vehicles-section/vehicles-section.tsx";
+const selectedInfoSectionsModule = "game-ui/game/components/selected-info-panel/selected-info-sections/selected-info-sections.tsx";
+const vehiclesSectionType = "Game.UI.InGame.VehiclesSection";
 const sliderModule = "game-ui/common/input/slider/slider.tsx";
+const infoSectionModule = "game-ui/game/components/selected-info-panel/shared-components/info-section/info-section.tsx";
+const infoRowModule = "game-ui/game/components/selected-info-panel/shared-components/info-row/info-row.tsx";
+const buttonModule = "game-ui/common/input/button/button.tsx";
+const secondaryButtonThemeModule = "game-ui/common/input/button/themes/paradox-secondary-button.module.scss";
+const buildingLimitsMarker = Symbol.for("SignatureLogistics.BuildingLimits");
+const vehicleDetailsMarker = Symbol.for("SignatureLogistics.VehicleDetails");
 
 function sameEntity(left, right) {
   return left.index === right.index && left.version === right.version;
@@ -22,8 +30,12 @@ export default function register(moduleRegistry) {
   console.log("[Signature Logistics] UI module registered.");
   const Slider = moduleRegistry.get(sliderModule, "Slider");
   const useStepTransformer = moduleRegistry.get(sliderModule, "useStepTransformer");
+  const InfoSection = moduleRegistry.get(infoSectionModule, "InfoSection");
+  const InfoRow = moduleRegistry.get(infoRowModule, "InfoRow");
+  const Button = moduleRegistry.get(buttonModule, "Button");
+  const secondaryButtonTheme = moduleRegistry.get(secondaryButtonThemeModule, "classes");
 
-  moduleRegistry.extend(vehiclesModule, "VehiclesSection", (OriginalVehiclesSection) => (props) => {
+  const withBuildingLimits = (OriginalVehiclesSection) => (props) => {
     const limits = useValue(buildingLimits$);
     const [maxVehicles, setMaxVehicles] = React.useState(limits.maxVehicles ?? 20);
     const [maxStorage, setMaxStorage] = React.useState(limits.maxStorage ?? 500);
@@ -61,47 +73,79 @@ export default function register(moduleRegistry) {
       React.Fragment,
       null,
       limits.visible && React.createElement(
-        "div",
+        InfoSection,
         { className: styles.buildingLimits },
         React.createElement(
-          "div",
-          { className: styles.limitsHeader },
-          React.createElement("span", null, "SIGNATURE BUILDING LIMITS"),
-          React.createElement("span", { className: limits.overridden ? styles.custom : styles.global }, limits.overridden ? "Custom" : "Using global defaults")
+          InfoRow,
+          {
+            uppercase: true,
+            disableFocus: true,
+            left: "BUILDING LOGISTICS",
+            right: React.createElement("span", { className: limits.overridden ? styles.custom : styles.global }, limits.overridden ? "CUSTOM" : "GLOBAL")
+          }
         ),
         React.createElement(
-          "div",
-          { className: styles.limitRow },
-          React.createElement("span", null, "Max vehicles"),
-          React.createElement("span", { className: styles.limitValue }, maxVehicles)
+          InfoRow,
+          {
+            disableFocus: true,
+            left: "Vehicle limit",
+            right: React.createElement("span", { className: styles.limitValue }, maxVehicles)
+          }
         ),
-        React.createElement(Slider, {
-          value: maxVehicles,
-          start: 1,
-          end: 100,
-          valueTransformer: vehicleSteps,
-          onChange: changeVehicles
-        }),
+        React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
+            value: maxVehicles,
+            start: 1,
+            end: 100,
+            valueTransformer: vehicleSteps,
+            onChange: changeVehicles
+          })
+        ),
         React.createElement(
-          "div",
-          { className: styles.limitRow },
-          React.createElement("span", null, "Max storage"),
-          React.createElement(LocalizedNumber, { className: styles.limitValue, value: maxStorage * 1000, unit: Unit.Weight })
+          InfoRow,
+          {
+            disableFocus: true,
+            left: "Storage limit",
+            right: React.createElement(LocalizedNumber, { className: styles.limitValue, value: maxStorage * 1000, unit: Unit.Weight })
+          }
         ),
-        React.createElement(Slider, {
-          value: maxStorage,
-          start: 10,
-          end: 5000,
-          valueTransformer: storageSteps,
-          onChange: changeStorage
-        }),
-        limits.overridden && React.createElement("button", { className: styles.resetButton, onClick: reset }, "Use global defaults")
+        React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
+            value: maxStorage,
+            start: 10,
+            end: 5000,
+            valueTransformer: storageSteps,
+            onChange: changeStorage
+          })
+        ),
+        limits.overridden && React.createElement(
+          InfoRow,
+          {
+            disableFocus: true,
+            left: "Building override",
+            right: React.createElement(
+              Button,
+              { theme: secondaryButtonTheme, className: styles.resetButton, onSelect: reset },
+              "Use global"
+            )
+          }
+        )
       ),
       React.createElement(OriginalVehiclesSection, props)
     );
+  };
+
+  moduleRegistry.extend(selectedInfoSectionsModule, "selectedInfoSectionComponents", (components) => {
+    if (!components[vehiclesSectionType][buildingLimitsMarker]) {
+      components[vehiclesSectionType] = withBuildingLimits(components[vehiclesSectionType]);
+      components[vehiclesSectionType][buildingLimitsMarker] = true;
+    }
+    return components;
   });
 
-  moduleRegistry.extend(vehiclesModule, "VehicleItem", (OriginalVehicleItem) => (props) => {
+  moduleRegistry.extend(vehiclesModule, "VehicleItem", (OriginalVehicleItem) => {
+    if (OriginalVehicleItem[vehicleDetailsMarker])
+      return OriginalVehicleItem;
+
+    const VehicleItemWithDetails = (props) => {
     const vehicleDetails = useValue(vehicleDetails$);
     const detail = vehicleDetails.find((item) => sameEntity(item.entity, props.vehicle.entity));
     const originalRow = OriginalVehicleItem(props);
@@ -146,5 +190,9 @@ export default function register(moduleRegistry) {
     );
 
     return React.cloneElement(originalRow, { left: vehicleAndCargo, link: enhancedLink });
+    };
+
+    VehicleItemWithDetails[vehicleDetailsMarker] = true;
+    return VehicleItemWithDetails;
   });
 }

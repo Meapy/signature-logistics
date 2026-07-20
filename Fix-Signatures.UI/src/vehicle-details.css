@@ -2,16 +2,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12rem;
   width: 100%;
   min-width: 0;
 }
 
 .cargo,
 .status {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4rem;
   white-space: nowrap;
 }
 
@@ -24,74 +22,53 @@
 .resourceIcon {
   width: 16rem;
   height: 16rem;
+  margin-right: 4rem;
 }
 
 .distance {
-  display: inline-flex;
-  gap: 3rem;
+  display: flex;
+  margin-left: 3rem;
   font-size: 18rem;
   opacity: 0.85;
 }
 
 .separator {
+  margin-right: 3rem;
   opacity: 0.6;
 }
 
 .buildingLimits {
-  padding: 14rem 32rem 18rem;
-  border-top: 1rem solid rgba(255, 255, 255, 0.12);
-}
-
-.limitsHeader,
-.limitRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.limitsHeader {
-  margin-bottom: 12rem;
-  font-size: 18rem;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.limitRow {
-  margin: 10rem 0 6rem;
-  font-size: 20rem;
+  padding-top: 8rem;
+  padding-bottom: 12rem;
 }
 
 .limitValue {
   color: var(--accentColorNormal);
 }
 
-.custom,
+.custom {
+  color: var(--accentColorNormal);
+}
+
 .global {
-  padding: 3rem 8rem;
-  border-radius: 8rem;
+  opacity: 0.65;
+}
+
+.custom,
+.global,
+.resetButton {
   font-size: 16rem;
   text-transform: none;
 }
 
-.custom {
-  color: var(--accentColorNormal);
-  background: rgba(54, 190, 255, 0.12);
-}
-
-.global {
-  color: rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.08);
+.sliderRow {
+  padding-left: 48rem;
+  padding-right: 48rem;
+  padding-top: 2rem;
+  padding-bottom: 10rem;
 }
 
 .resetButton {
-  display: block;
-  margin: 14rem auto 0;
-  padding: 6rem 14rem;
-  border: 1rem solid rgba(255, 255, 255, 0.25);
-  border-radius: 6rem;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.resetButton:hover {
-  background: rgba(255, 255, 255, 0.14);
+  padding-left: 12rem;
+  padding-right: 12rem;
 }

@@ -17,6 +17,13 @@
 - 2026-07-18T16:22Z [USER] Replace the `Codex` author/committer identity on every published commit with the user's GitHub identity.
 - 2026-07-18T16:26Z [USER] Rewrite the Paradox Mods description so players clearly understand the problem addressed and the mod's behavior.
 - 2026-07-19T14:22Z [USER] Fix per-building controls not being visible when a signature factory is selected.
+- 2026-07-20T12:43Z [USER] Per-building controls remain absent in 1.0.1 when selecting Modern Industrial Distribution Center; fix the actual selection-resolution bug.
+- 2026-07-20T12:59Z [USER] The locally deployed selection-resolution build still shows no per-building controls on Switchon, although enhanced vehicle rows remain active.
+- 2026-07-20T13:19Z [USER] Controls remained absent after restoring and restarting with the current MJS; continue to the actual frontend render-path fix.
+- 2026-07-20T13:43Z [USER] Component-map controls now work, but appear twice and use a poorly stacked, unstyled layout; deduplicate and make the panel intuitive.
+- 2026-07-20T13:54Z [USER] The deduplicated native layout is functional but still visually oversized/off; make it more compact and balanced.
+- 2026-07-20T14:10Z [USER] Make the per-building global-default reset action smaller and fit it cleanly within the panel.
+- 2026-07-20T14:29Z [USER] Publish the confirmed fix, push and merge it on GitHub, publish it to Paradox Mods, and add the supplied final in-game screenshot to the store page.
 
 [DECISIONS]
 
@@ -41,6 +48,9 @@
 - 2026-07-18T16:07Z [CODE] Use `https://github.com/Meapy/signature-logistics` as the canonical public source link and retain the supplied PNGs without visual modification.
 - 2026-07-18T16:22Z [CODE] Use verified GitHub identity `Daniel Krasovski <44982407+Meapy@users.noreply.github.com>` for all existing and future repository commits.
 - 2026-07-19T14:22Z [CODE] Render signature-building controls before the native Vehicles section so long expanded vehicle lists cannot push them out of view; retain the existing signature-only backend visibility guard.
+- 2026-07-20T12:43Z [CODE] Resolve the selected info-panel entity through its renter company and back to the owning signature building; use that same resolved entity for visibility, save, and reset.
+- 2026-07-20T13:19Z [CODE] Wrap `Game.UI.InGame.VehiclesSection` through the native `selectedInfoSectionComponents` map instead of replacing the already-captured `VehiclesSection` module export.
+- 2026-07-20T13:43Z [CODE] Make both section-map and vehicle-row wrappers idempotent with global Symbol markers, and render limits with native `InfoSection`, `InfoRow`, and secondary `Button` components.
 
 [PROGRESS]
 
@@ -61,6 +71,14 @@
 - 2026-07-18T16:26Z [CODE] Reworked store copy around the signature-factory logistics bottleneck, configurable global/per-building controls, saved settings, restocking economy, delivery visibility, and unchanged out-of-scope systems.
 - 2026-07-19T14:22Z [CODE] Moved the controls above Vehicles in use, labeled them `SIGNATURE BUILDING LIMITS`, aligned frontend fallbacks to 20 vehicles/500 tonnes, and prepared version `1.0.1` documentation/metadata.
 - 2026-07-19T14:26Z [TOOL] Opened and merged GitHub PR #1 (`agent/show-building-controls` into `master`) after its exact head was mergeable and GitGuardian passed.
+- 2026-07-20T12:43Z [CODE] Added a direct-building fast path plus a small signature-building renter lookup for UI selections represented by their company or another game UI proxy; prepared version 1.0.2 metadata.
+- 2026-07-20T12:59Z [CODE] Added temporary once-per-selection diagnostics reporting selected entity traits, company resolution, signature query count, and resolved building; deployed only the managed diagnostic DLL for the next restart.
+- 2026-07-20T13:19Z [CODE] Reworked the UI extension to the proven selected-info component-map pattern, updated its smoke test to exercise that exact path, rebuilt successfully, and deployed hash-matching MJS `391373BDF66974B3893045384972C85C39F36B58DF7D79E548C7DFEF5C4BE784` for restart testing.
+- 2026-07-20T13:43Z [CODE] Added double-registration assertions, clearer `SIGNATURE LOGISTICS`/vehicle/storage labels, native reset styling, supported flex spacing, and deployed test MJS `B0B18111294604192A08B4988E532A2CC64BFA630B9AE299159D4BAFBA327CB2` plus CSS `26E52AE5D24DDBA6A11B5B6A2D8BE021060F224D7284BC2DA32ED7B015197FB8`.
+- 2026-07-20T13:54Z [CODE] Shortened the header state to `BUILDING LOGISTICS`/`CUSTOM`, inset slider tracks to align with native rows, and constrained the action to a compact right-aligned `Use global defaults` button; UI test passes and deployed hashes are MJS `845499297DAAD8FDDE9C1A09C9C9D2D491CC92922A57B1B13DB8B7B6AAFD7A97` and CSS `C7431D9C77D2AABFFBFFA34739FEE5A2C001AE167A052E8A32244E731D2F2C9C`.
+- 2026-07-20T14:10Z [CODE] Replaced the oversized standalone reset action with a native `Building override` row and short `Use global` button; UI build/smoke test passes and deployed hashes are MJS `714224FC9D430FD7185659432D4ED53D57F972116AC61CA6389BCB0ACD7D0B63` and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
+- 2026-07-20T14:29Z [CODE] Removed temporary selection diagnostics, added the exact supplied screenshot as `building-overrides.png`, refreshed README/store wording, and expanded the 1.0.2 changelog to cover selection resolution, deduplication, and the compact native controls.
+- 2026-07-20T14:29Z [TOOL] Docker is not installed; the pinned local UI build/smoke test passed. The managed Release staged outside the running game's locked mod folder with 0 warnings/errors; validated package hashes are DLL `C5532765F36AA145FDB36285DEC6CF93987DD23358510E2AC600512831D78D79`, MJS `714224FC9D430FD7185659432D4ED53D57F972116AC61CA6389BCB0ACD7D0B63`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
 
 [DISCOVERIES]
 
@@ -86,6 +104,11 @@
 - 2026-07-18T16:07Z [TOOL] GitHub CLI 2.96.0 is authenticated as `Meapy`; the planned `Meapy/signature-logistics` repository name was available before creation.
 - 2026-07-18T16:12Z [TOOL] ModPublisher resolves relative thumbnail/screenshot paths from its working directory; running `Update` from the managed project directory resolved all media and the server accepted the metadata.
 - 2026-07-19T14:22Z [TOOL] Current logs prove the subscribed 1.0.0 DLL and MJS loaded with no Signature Logistics UI exception; the wrapper placed controls after the entire Vehicles section, making them effectively hidden beneath factories with long vehicle lists.
+- 2026-07-20T12:43Z [TOOL] The user's 1.0.1 screenshot shows no controls immediately above the collapsed Vehicles section while the mod-applied 40-vehicle and 720-tonne limits are active; the frontend is loaded, but the backend's direct `Signature` plus `Renter` predicate is false for the selected UI entity.
+- 2026-07-20T12:43Z [TOOL] The installed Paradox cache is current package `151747_2`; stale package loading is ruled out.
+- 2026-07-20T12:59Z [TOOL] Fresh logs prove the game loaded managed code and UI from local `Mods/Fix-Signatures`, not Paradox cache; there are no Signature Logistics exceptions. The first diagnostic build compiled but full-folder deployment was blocked by the running game's native DLL lock, so the matching managed DLL SHA-256 `2833AC96311E37D879A5074B40ED5889E00C11926379CC93E9E642FF85EC1AB9` was copied directly for restart testing.
+- 2026-07-20T13:19Z [TOOL] Even with the current MJS registered, `WriteBuildingLimits` produced no diagnostic line, proving the wrapper never rendered. Installed native UI shows `selectedInfoSectionComponents["Game.UI.InGame.VehiclesSection"]` captures the original `VehiclesSection` function before mod registration; changing the module export later cannot update that stored reference, while its body still reads the mutable `VehicleItem` export, explaining why cargo rows worked.
+- 2026-07-20T13:43Z [TOOL] In-game screenshot proves the map extension and backend override now work; duplicate panels result from two UI registrations nesting the map wrapper, while custom HTML/CSS uses unsupported game UI properties. Updated bundle smoke test passes and explicitly rejects a second wrapper.
 
 [OUTCOMES]
 
@@ -113,3 +136,4 @@
 - 2026-07-18T16:26Z [TOOL] Paradox ModPublisher accepted the clearer short and long descriptions for live mod ID `151747`; all screenshots and external links were retained.
 - 2026-07-19T14:22Z [TOOL] UI build/smoke test passes and asserts controls precede the native Vehicles section; Release build succeeds with 0 warnings/errors and output/deploy DLL, MJS, and CSS hashes match. Paradox 1.0.1 upload remains pending.
 - 2026-07-19T14:26Z [TOOL] Supersedes the pending upload above: Paradox ModPublisher successfully published Signature Logistics `1.0.1` to mod ID `151747` with the verified DLL/MJS/CSS package and updated changelog.
+- 2026-07-20T12:43Z [TOOL] The selection-resolution fix compiles and post-processes successfully in Release with 0 warnings/errors; IL inspection confirms visibility, save, and reset all call the resolver, and the deployed local-game DLL matches build SHA-256 `809DB7E295391AE55E4D095EA6633093B74DE260F0456163F9C20624CBCA494F`. Per user instruction, Paradox 1.0.2 publication is paused until in-game confirmation.

@@ -41,18 +41,26 @@ globalThis.window = {
 };
 
 let extendVehicleItem;
-let extendVehiclesSection;
+let extendSelectedInfoSections;
 const moduleRegistry = {
   get(path, name) {
-    assert.equal(path, "game-ui/common/input/slider/slider.tsx");
-    if (name === "Slider") return "Slider";
-    if (name === "useStepTransformer") return (step) => ({ step });
+    if (path === "game-ui/common/input/slider/slider.tsx" && name === "Slider") return "Slider";
+    if (path === "game-ui/common/input/slider/slider.tsx" && name === "useStepTransformer") return (step) => ({ step });
+    if (path.endsWith("info-section.tsx") && name === "InfoSection") return "InfoSection";
+    if (path.endsWith("info-row.tsx") && name === "InfoRow") return "InfoRow";
+    if (path.endsWith("button.tsx") && name === "Button") return "Button";
+    if (path.endsWith("paradox-secondary-button.module.scss") && name === "classes") return "SecondaryButtonTheme";
     assert.fail(`Unexpected module export ${name}`);
   },
   extend(path, name, extension) {
-    assert.match(path, /vehicles-section\.tsx$/);
-    if (name === "VehicleItem") extendVehicleItem = extension;
-    else if (name === "VehiclesSection") extendVehiclesSection = extension;
+    if (name === "VehicleItem") {
+      assert.match(path, /vehicles-section\.tsx$/);
+      extendVehicleItem = extension;
+    }
+    else if (name === "selectedInfoSectionComponents") {
+      assert.match(path, /selected-info-sections\.tsx$/);
+      extendSelectedInfoSections = extension;
+    }
     else assert.fail(`Unexpected extension ${name}`);
   }
 };
@@ -64,7 +72,9 @@ const OriginalVehicleItem = () => element("InfoRow", {
   left: element("Name", null, "Delivery Pickup"),
   link: element("Link", null, "Buying")
 });
-const row = extendVehicleItem(OriginalVehicleItem)({ vehicle: { entity } });
+const VehicleItemWithDetails = extendVehicleItem(OriginalVehicleItem);
+assert.equal(extendVehicleItem(VehicleItemWithDetails), VehicleItemWithDetails);
+const row = VehicleItemWithDetails({ vehicle: { entity } });
 const linkChildren = row.props.link.props.children;
 
 assert.equal(row.props.left.props.children[0].type, "Name");
@@ -73,20 +83,30 @@ assert.equal(linkChildren.props.children[0], "Buying");
 assert.equal(linkChildren.props.children[1].props.children[1].type, "LocalizedNumber");
 
 const OriginalVehiclesSection = () => element("OriginalVehiclesSection", null);
-const section = extendVehiclesSection(OriginalVehiclesSection)({});
+const sectionComponents = extendSelectedInfoSections({
+  "Game.UI.InGame.VehiclesSection": OriginalVehiclesSection
+});
+const wrappedVehiclesSection = sectionComponents["Game.UI.InGame.VehiclesSection"];
+extendSelectedInfoSections(sectionComponents);
+assert.equal(sectionComponents["Game.UI.InGame.VehiclesSection"], wrappedVehiclesSection);
+const section = sectionComponents["Game.UI.InGame.VehiclesSection"]({});
 const controls = section.props.children[0];
-const vehicleSlider = controls.props.children[2];
-const storageSlider = controls.props.children[4];
-const resetButton = controls.props.children[5];
+const vehicleSlider = controls.props.children[2].props.children;
+const storageSlider = controls.props.children[4].props.children;
+const resetRow = controls.props.children[5];
+const resetButton = resetRow.props.right;
 
-assert.equal(controls.props.children[0].props.children[0].props.children, "SIGNATURE BUILDING LIMITS");
+assert.equal(controls.type, "InfoSection");
+assert.equal(controls.props.children[0].props.left, "BUILDING LOGISTICS");
 assert.equal(section.props.children[1].type, OriginalVehiclesSection);
 assert.equal(vehicleSlider.type, "Slider");
 assert.equal(vehicleSlider.props.value, 20);
 assert.equal(storageSlider.props.value, 600);
+assert.equal(resetRow.props.left, "Building override");
+assert.equal(resetButton.props.children, "Use global");
 vehicleSlider.props.onChange(25);
 storageSlider.props.onChange(900);
-resetButton.props.onClick();
+resetButton.props.onSelect();
 assert.deepEqual(triggers, [
   ["SignatureFix", "setBuildingLimits", 25, 600],
   ["SignatureFix", "setBuildingLimits", 25, 900],
