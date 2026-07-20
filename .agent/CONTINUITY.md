@@ -25,6 +25,7 @@
 - 2026-07-20T14:10Z [USER] Make the per-building global-default reset action smaller and fit it cleanly within the panel.
 - 2026-07-20T14:29Z [USER] Publish the confirmed fix, push and merge it on GitHub, publish it to Paradox Mods, and add the supplied final in-game screenshot to the store page.
 - 2026-07-20T15:09Z [USER] Investigate why signature-building companies change frequently and reduce avoidable bankruptcies/company churn; deploy a test build but do not publish before user confirmation.
+- 2026-07-20T15:49Z [USER] Add a row beneath the Company section showing why the previous signature-building tenant left, and replace the unrecorded catch-all with every reliably detectable cause.
 
 [DECISIONS]
 
@@ -54,6 +55,8 @@
 - 2026-07-20T13:43Z [CODE] Make both section-map and vehicle-row wrappers idempotent with global Symbol markers, and render limits with native `InfoSection`, `InfoRow`, and secondary `Button` components.
 - 2026-07-20T15:09Z [CODE] Preserve a signature tenant when the game marks it `MovingAway` for a random tax/worker-shortage roll or before a genuine bankruptcy matures; allow move-away only when exact company worth remains below the game threshold for more than 65,536 frames.
 - 2026-07-20T15:09Z [CODE] Before the mod queues a priority input purchase, reserve that truckload's industrial value and require the remaining company worth to stay at or above the game bankruptcy limit; native company buying remains available.
+- 2026-07-20T15:49Z [CODE] Persist current, pending, and previous tenant state on each signature building; record the strongest active warning at mature bankruptcy, distinguish rent/property relocation, and use `External/load replacement` only when the game leaves no observable cause.
+- 2026-07-20T15:49Z [CODE] Wrap the native `Game.UI.InGame.CompanySection` through the existing selected-info component map and render one native `Previous company left` row immediately after it; show `No departure recorded` until a future observed change occurs.
 
 [PROGRESS]
 
@@ -83,6 +86,7 @@
 - 2026-07-20T14:29Z [CODE] Removed temporary selection diagnostics, added the exact supplied screenshot as `building-overrides.png`, refreshed README/store wording, and expanded the 1.0.2 changelog to cover selection resolution, deduplication, and the compact native controls.
 - 2026-07-20T14:29Z [TOOL] Docker is not installed; the pinned local UI build/smoke test passed. The managed Release staged outside the running game's locked mod folder with 0 warnings/errors; validated package hashes are DLL `C5532765F36AA145FDB36285DEC6CF93987DD23358510E2AC600512831D78D79`, MJS `714224FC9D430FD7185659432D4ED53D57F972116AC61CA6389BCB0ACD7D0B63`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
 - 2026-07-20T15:09Z [CODE] Added exact company-worth evaluation, mature-bankruptcy discrimination, non-bankruptcy tenant protection, a bankruptcy-cushion check for priority purchases, an event log, documentation, and an eight-case compiled-assembly boundary check.
+- 2026-07-20T15:49Z [CODE] Added serializable `SignatureCompanyHistory`, bankruptcy-warning and property-relocation classification, a throttled UI binding, an idempotent Company-section wrapper, updated smoke/boundary checks, and player/build documentation.
 
 [DISCOVERIES]
 
@@ -116,6 +120,8 @@
 - 2026-07-20T15:09Z [TOOL] Installed `Game.dll` shows `CompanyMoveAwaySystem` adds the same `MovingAway` component for both bankruptcy and a separate random roll: `(tax rate - 10) * 2.5`, plus 5 for an uneducated-worker warning and 20 for an educated-worker warning; the latter alone averages one company replacement every five in-game days.
 - 2026-07-20T15:09Z [TOOL] Genuine bankruptcy uses `EconomyUtils.GetCompanyTotalWorth`, the configured `m_CompanyBankruptcyLimit`, and a low-income duration greater than 65,536 frames; live logs showed one signature building replace renter company `2936053:1` with `2959176:1` in about 17 minutes.
 - 2026-07-20T15:09Z [TOOL] Installed `ResourceBuyerSystem` subtracts a company's complete purchase price without the household-style cash cap; aggressive priority restocking can therefore consume the remaining cushion through purchase and transport costs even though inventory retains asset value.
+- 2026-07-20T15:49Z [TOOL] Installed `Game.dll` defines detailed household `MoveAwayReason` values, but `CompanyMoveAwaySystem` initializes `MovingAway` to its default `None` for both random churn and bankruptcy; company causes must be inferred from exact worth/timer state and active company/workforce warnings.
+- 2026-07-20T15:49Z [TOOL] `PropertyProcessingSystem`, `PropertyRenterSystem`, and `RentAdjustSystem` can remove a company's `PropertyRenter` link independently of `CompanyMoveAwaySystem`; that observable path is classified as rent/property relocation. Remaining unobservable paths are serialization repair/migration, debug tooling, another mod, or removal while this mod was absent.
 
 [OUTCOMES]
 
@@ -147,3 +153,4 @@
 - 2026-07-20T14:34Z [TOOL] GitHub PR #2 (`feature/resolve-building-selection` into `master`) passed GitGuardian and merged as `0da6a5f9f8134f0551b533b4df46ca199da34e84`; both feature commits resolve to the `Meapy` account and use Daniel Krasovski as author and committer.
 - 2026-07-20T14:34Z [TOOL] Paradox ModPublisher successfully published Signature Logistics `1.0.2` to mod ID `151747`, including the validated DLL/MJS/CSS package, updated changelog, and four screenshots. The public page returns HTTP 200 with title `Signature Logistics - Paradox Mods`.
 - 2026-07-20T15:09Z [TOOL] Bankruptcy/churn test build compiles and post-processes in Release with 0 warnings/errors; eight compiled-helper boundary checks pass, `git diff --check` passes, and local deployed DLL SHA-256 matches `A2A8C2A3B351A8145AA3DEA3D7E6E62443EC48AB85DF3A89D710BB001FB302FB`. Restart/in-game observation remains required; nothing was pushed or published.
+- 2026-07-20T15:49Z [TOOL] Company-history UI build/smoke test passes; final managed Release builds and post-processes with 0 warnings/errors, 13 compiled bankruptcy/affordability/history checks pass, and deployed local hashes match DLL `20EDCE80AC91CED779198F09F9F1E7F782A929E0C8CB2441E7645E515FB43366`, MJS `D6A893863B142F6E481A20C80A39E3E5E2C9A5374F6B101C781C4D7BA702771C`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Restart/UI/save-reload testing remains required; nothing was pushed or published.

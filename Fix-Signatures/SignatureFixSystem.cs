@@ -86,13 +86,38 @@ namespace SignatureFix
                         ? EntityManager.GetComponentData<IndustrialProcessData>(companyPrefab)
                         : default;
                     int companyWorth = GetCompanyWorth(company, process, resourcePrefabs, ref resourceDatas, ref deliveryTrucks, ref layouts);
+                    SignatureCompanyHistory history = ObserveCompany(building, company);
 
                     // The game also uses MovingAway for random tax/worker-shortage churn. Preserve the
                     // signature tenant unless its worth has stayed below the real bankruptcy limit past the grace period.
-                    if (EntityManager.HasComponent<MovingAway>(company) && !IsMatureBankruptcy(company, companyWorth, bankruptcyLimit))
+                    if (EntityManager.HasComponent<MovingAway>(company))
                     {
-                        EntityManager.RemoveComponent<MovingAway>(company);
-                        protectedTenants++;
+                        if (IsMatureBankruptcy(company, companyWorth, bankruptcyLimit))
+                        {
+                            history.m_PendingReason = GetBankruptcyReason(company);
+                            EntityManager.SetComponentData(building, history);
+                        }
+                        else
+                        {
+                            EntityManager.RemoveComponent<MovingAway>(company);
+                            if (history.m_PendingReason != CompanyDepartureReason.None)
+                            {
+                                history.m_PendingReason = CompanyDepartureReason.None;
+                                EntityManager.SetComponentData(building, history);
+                            }
+                            protectedTenants++;
+                        }
+                    }
+                    else
+                    {
+                        CompanyDepartureReason pendingReason = EntityManager.HasComponent<PropertyRenter>(company)
+                            ? CompanyDepartureReason.None
+                            : CompanyDepartureReason.PropertyRelocation;
+                        if (history.m_PendingReason != pendingReason)
+                        {
+                            history.m_PendingReason = pendingReason;
+                            EntityManager.SetComponentData(building, history);
+                        }
                     }
 
                     if (EntityManager.HasComponent<TransportCompanyData>(companyPrefab))
@@ -233,6 +258,74 @@ namespace SignatureFix
 
             long purchaseReserve = (long)Unity.Mathematics.math.ceil(Unity.Mathematics.math.max(0f, unitPrice) * amount);
             return companyWorth - purchaseReserve >= bankruptcyLimit;
+        }
+
+        private SignatureCompanyHistory ObserveCompany(Entity building, Entity company)
+        {
+            if (!EntityManager.HasComponent<SignatureCompanyHistory>(building))
+            {
+                SignatureCompanyHistory added = new SignatureCompanyHistory(company);
+                EntityManager.AddComponentData(building, added);
+                return added;
+            }
+
+            SignatureCompanyHistory history = EntityManager.GetComponentData<SignatureCompanyHistory>(building);
+            SignatureCompanyHistory updated = ObserveCompany(history, company, GetUnexpectedDepartureReason(history.m_CurrentCompany));
+            if (history.m_CurrentCompany != updated.m_CurrentCompany ||
+                history.m_LastReason != updated.m_LastReason ||
+                history.m_PendingReason != updated.m_PendingReason)
+                EntityManager.SetComponentData(building, updated);
+            return updated;
+        }
+
+        internal static SignatureCompanyHistory ObserveCompany(SignatureCompanyHistory history, Entity company, CompanyDepartureReason unexpectedReason)
+        {
+            if (history.m_CurrentCompany == company)
+                return history;
+
+            if (history.m_CurrentCompany != Entity.Null)
+            {
+                history.m_LastReason = history.m_PendingReason != CompanyDepartureReason.None
+                    ? history.m_PendingReason
+                    : unexpectedReason;
+            }
+
+            history.m_CurrentCompany = company;
+            history.m_PendingReason = CompanyDepartureReason.None;
+            return history;
+        }
+
+        private CompanyDepartureReason GetUnexpectedDepartureReason(Entity previousCompany)
+        {
+            if (previousCompany != Entity.Null &&
+                EntityManager.Exists(previousCompany) &&
+                !EntityManager.HasComponent<PropertyRenter>(previousCompany))
+                return CompanyDepartureReason.PropertyRelocation;
+
+            return CompanyDepartureReason.ExternalOrLoadReplacement;
+        }
+
+        private CompanyDepartureReason GetBankruptcyReason(Entity company)
+        {
+            if (EntityManager.HasComponent<CompanyNotifications>(company))
+            {
+                CompanyNotifications notifications = EntityManager.GetComponentData<CompanyNotifications>(company);
+                if (notifications.m_NoInputEntity != Entity.Null)
+                    return CompanyDepartureReason.BankruptcyMissingInputs;
+                if (notifications.m_NoCustomersEntity != Entity.Null)
+                    return CompanyDepartureReason.BankruptcyNoCustomers;
+            }
+
+            if (EntityManager.HasComponent<WorkProvider>(company))
+            {
+                WorkProvider workProvider = EntityManager.GetComponentData<WorkProvider>(company);
+                if (workProvider.m_EducatedNotificationEntity != Entity.Null)
+                    return CompanyDepartureReason.BankruptcyEducatedWorkers;
+                if (workProvider.m_UneducatedNotificationEntity != Entity.Null)
+                    return CompanyDepartureReason.BankruptcyWorkers;
+            }
+
+            return CompanyDepartureReason.Bankruptcy;
         }
 
         private void SelectLowerStockInput(

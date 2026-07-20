@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 const entity = { index: 42, version: 7 };
 const details = [{ entity, resource: "Chemicals", cargo: 12000, capacity: 25000, distance: 1500 }];
 const limits = { visible: true, overridden: true, maxVehicles: 20, maxStorage: 600, globalMaxVehicles: 20, globalMaxStorage: 500 };
+const departure = { visible: true, reason: "Bankruptcy: Missing materials" };
 const triggers = [];
 
 function element(type, props, ...children) {
@@ -31,7 +32,7 @@ globalThis.window = {
   "cs2/api": {
     bindValue: (_group, name) => ({ name }),
     trigger: (...args) => triggers.push(args),
-    useValue: (binding) => binding.name === "vehicleDetails" ? details : limits
+    useValue: (binding) => binding.name === "vehicleDetails" ? details : binding.name === "buildingLimits" ? limits : departure
   },
   "cs2/l10n": {
     LocalizedFraction: "LocalizedFraction",
@@ -83,12 +84,16 @@ assert.equal(linkChildren.props.children[0], "Buying");
 assert.equal(linkChildren.props.children[1].props.children[1].type, "LocalizedNumber");
 
 const OriginalVehiclesSection = () => element("OriginalVehiclesSection", null);
+const OriginalCompanySection = () => element("OriginalCompanySection", null);
 const sectionComponents = extendSelectedInfoSections({
-  "Game.UI.InGame.VehiclesSection": OriginalVehiclesSection
+  "Game.UI.InGame.VehiclesSection": OriginalVehiclesSection,
+  "Game.UI.InGame.CompanySection": OriginalCompanySection
 });
 const wrappedVehiclesSection = sectionComponents["Game.UI.InGame.VehiclesSection"];
+const wrappedCompanySection = sectionComponents["Game.UI.InGame.CompanySection"];
 extendSelectedInfoSections(sectionComponents);
 assert.equal(sectionComponents["Game.UI.InGame.VehiclesSection"], wrappedVehiclesSection);
+assert.equal(sectionComponents["Game.UI.InGame.CompanySection"], wrappedCompanySection);
 const section = sectionComponents["Game.UI.InGame.VehiclesSection"]({});
 const controls = section.props.children[0];
 const vehicleSlider = controls.props.children[2].props.children;
@@ -104,6 +109,11 @@ assert.equal(vehicleSlider.props.value, 20);
 assert.equal(storageSlider.props.value, 600);
 assert.equal(resetRow.props.left, "Building override");
 assert.equal(resetButton.props.children, "Use global");
+const companySection = wrappedCompanySection({});
+const departureSection = companySection.props.children[1];
+assert.equal(companySection.props.children[0].type, OriginalCompanySection);
+assert.equal(departureSection.props.children.props.left, "Previous company left");
+assert.equal(departureSection.props.children.props.right, "Bankruptcy: Missing materials");
 vehicleSlider.props.onChange(25);
 storageSlider.props.onChange(900);
 resetButton.props.onSelect();

@@ -34,6 +34,7 @@ namespace SignatureFix
                 ComponentType.ReadOnly<Renter>());
             AddUpdateBinding(new RawValueBinding(BindingGroup, "vehicleDetails", WriteVehicleDetails));
             AddUpdateBinding(new RawValueBinding(BindingGroup, "buildingLimits", WriteBuildingLimits));
+            AddUpdateBinding(new RawValueBinding(BindingGroup, "companyDeparture", WriteCompanyDeparture));
             AddBinding(new TriggerBinding<int, int>(BindingGroup, "setBuildingLimits", SetBuildingLimits, ValueReaders.Create<int>(), ValueReaders.Create<int>()));
             AddBinding(new TriggerBinding(BindingGroup, "resetBuildingLimits", ResetBuildingLimits));
         }
@@ -131,6 +132,44 @@ namespace SignatureFix
             writer.PropertyName("globalMaxStorage");
             writer.Write(globalMaxStorage);
             writer.TypeEnd();
+        }
+
+        private void WriteCompanyDeparture(IJsonWriter writer)
+        {
+            bool visible = TryGetSelectedSignatureBuilding(out Entity building);
+            CompanyDepartureReason reason = visible && EntityManager.HasComponent<SignatureCompanyHistory>(building)
+                ? EntityManager.GetComponentData<SignatureCompanyHistory>(building).m_LastReason
+                : CompanyDepartureReason.None;
+
+            writer.TypeBegin("SignatureFix.CompanyDeparture");
+            writer.PropertyName("visible");
+            writer.Write(visible);
+            writer.PropertyName("reason");
+            writer.Write(GetDepartureReason(reason));
+            writer.TypeEnd();
+        }
+
+        internal static string GetDepartureReason(CompanyDepartureReason reason)
+        {
+            switch (reason)
+            {
+                case CompanyDepartureReason.Bankruptcy:
+                    return "Bankruptcy: Other losses";
+                case CompanyDepartureReason.BankruptcyMissingInputs:
+                    return "Bankruptcy: Missing materials";
+                case CompanyDepartureReason.BankruptcyNoCustomers:
+                    return "Bankruptcy: No customers";
+                case CompanyDepartureReason.BankruptcyEducatedWorkers:
+                    return "Bankruptcy: Educated workers";
+                case CompanyDepartureReason.BankruptcyWorkers:
+                    return "Bankruptcy: Worker shortage";
+                case CompanyDepartureReason.PropertyRelocation:
+                    return "Relocated: Rent/property change";
+                case CompanyDepartureReason.ExternalOrLoadReplacement:
+                    return "External/load replacement";
+                default:
+                    return "No departure recorded";
+            }
         }
 
         private void SetBuildingLimits(int maxVehicles, int maxStorage)
