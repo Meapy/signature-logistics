@@ -17,6 +17,7 @@
 - 2026-07-18T16:22Z [USER] Replace the `Codex` author/committer identity on every published commit with the user's GitHub identity.
 - 2026-07-18T16:26Z [USER] Rewrite the Paradox Mods description so players clearly understand the problem addressed and the mod's behavior.
 - 2026-07-19T14:22Z [USER] Fix per-building controls not being visible when a signature factory is selected.
+- 2026-07-20T12:43Z [USER] Per-building controls remain absent in 1.0.1 when selecting Modern Industrial Distribution Center; fix the actual selection-resolution bug.
 
 [DECISIONS]
 
@@ -41,6 +42,7 @@
 - 2026-07-18T16:07Z [CODE] Use `https://github.com/Meapy/signature-logistics` as the canonical public source link and retain the supplied PNGs without visual modification.
 - 2026-07-18T16:22Z [CODE] Use verified GitHub identity `Daniel Krasovski <44982407+Meapy@users.noreply.github.com>` for all existing and future repository commits.
 - 2026-07-19T14:22Z [CODE] Render signature-building controls before the native Vehicles section so long expanded vehicle lists cannot push them out of view; retain the existing signature-only backend visibility guard.
+- 2026-07-20T12:43Z [CODE] Resolve the selected info-panel entity through its renter company and back to the owning signature building; use that same resolved entity for visibility, save, and reset.
 
 [PROGRESS]
 
@@ -61,6 +63,7 @@
 - 2026-07-18T16:26Z [CODE] Reworked store copy around the signature-factory logistics bottleneck, configurable global/per-building controls, saved settings, restocking economy, delivery visibility, and unchanged out-of-scope systems.
 - 2026-07-19T14:22Z [CODE] Moved the controls above Vehicles in use, labeled them `SIGNATURE BUILDING LIMITS`, aligned frontend fallbacks to 20 vehicles/500 tonnes, and prepared version `1.0.1` documentation/metadata.
 - 2026-07-19T14:26Z [TOOL] Opened and merged GitHub PR #1 (`agent/show-building-controls` into `master`) after its exact head was mergeable and GitGuardian passed.
+- 2026-07-20T12:43Z [CODE] Added a direct-building fast path plus a small signature-building renter lookup for UI selections represented by their company or another game UI proxy; prepared version 1.0.2 metadata.
 
 [DISCOVERIES]
 
@@ -86,6 +89,8 @@
 - 2026-07-18T16:07Z [TOOL] GitHub CLI 2.96.0 is authenticated as `Meapy`; the planned `Meapy/signature-logistics` repository name was available before creation.
 - 2026-07-18T16:12Z [TOOL] ModPublisher resolves relative thumbnail/screenshot paths from its working directory; running `Update` from the managed project directory resolved all media and the server accepted the metadata.
 - 2026-07-19T14:22Z [TOOL] Current logs prove the subscribed 1.0.0 DLL and MJS loaded with no Signature Logistics UI exception; the wrapper placed controls after the entire Vehicles section, making them effectively hidden beneath factories with long vehicle lists.
+- 2026-07-20T12:43Z [TOOL] The user's 1.0.1 screenshot shows no controls immediately above the collapsed Vehicles section while the mod-applied 40-vehicle and 720-tonne limits are active; the frontend is loaded, but the backend's direct `Signature` plus `Renter` predicate is false for the selected UI entity.
+- 2026-07-20T12:43Z [TOOL] The installed Paradox cache is current package `151747_2`; stale package loading is ruled out.
 
 [OUTCOMES]
 
@@ -113,3 +118,4 @@
 - 2026-07-18T16:26Z [TOOL] Paradox ModPublisher accepted the clearer short and long descriptions for live mod ID `151747`; all screenshots and external links were retained.
 - 2026-07-19T14:22Z [TOOL] UI build/smoke test passes and asserts controls precede the native Vehicles section; Release build succeeds with 0 warnings/errors and output/deploy DLL, MJS, and CSS hashes match. Paradox 1.0.1 upload remains pending.
 - 2026-07-19T14:26Z [TOOL] Supersedes the pending upload above: Paradox ModPublisher successfully published Signature Logistics `1.0.1` to mod ID `151747` with the verified DLL/MJS/CSS package and updated changelog.
+- 2026-07-20T12:43Z [TOOL] The selection-resolution fix compiles and post-processes successfully in Release with 0 warnings/errors; IL inspection confirms visibility, save, and reset all call the resolver, and the deployed local-game DLL matches build SHA-256 `809DB7E295391AE55E4D095EA6633093B74DE260F0456163F9C20624CBCA494F`. Per user instruction, Paradox 1.0.2 publication is paused until in-game confirmation.

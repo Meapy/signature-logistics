@@ -1,11 +1,13 @@
 using Colossal.UI.Binding;
 using Game.Buildings;
+using Game.Companies;
 using Game.Economy;
 using Game.Objects;
 using Game.Prefabs;
 using Game.UI;
 using Game.UI.InGame;
 using Game.Vehicles;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine.Scripting;
@@ -19,6 +21,7 @@ namespace SignatureFix
         private const int UpdateEveryFrames = 15;
 
         private SelectedInfoUISystem m_SelectedInfo;
+        private EntityQuery m_SignatureBuildings;
         private int m_Frame;
 
         [Preserve]
@@ -26,6 +29,9 @@ namespace SignatureFix
         {
             base.OnCreate();
             m_SelectedInfo = World.GetOrCreateSystemManaged<SelectedInfoUISystem>();
+            m_SignatureBuildings = GetEntityQuery(
+                ComponentType.ReadOnly<Signature>(),
+                ComponentType.ReadOnly<Renter>());
             AddUpdateBinding(new RawValueBinding(BindingGroup, "vehicleDetails", WriteVehicleDetails));
             AddUpdateBinding(new RawValueBinding(BindingGroup, "buildingLimits", WriteBuildingLimits));
             AddBinding(new TriggerBinding<int, int>(BindingGroup, "setBuildingLimits", SetBuildingLimits, ValueReaders.Create<int>(), ValueReaders.Create<int>()));
@@ -97,8 +103,7 @@ namespace SignatureFix
 
         private void WriteBuildingLimits(IJsonWriter writer)
         {
-            Entity building = m_SelectedInfo.selectedEntity;
-            bool visible = EntityManager.HasComponent<Signature>(building) && EntityManager.HasBuffer<Renter>(building);
+            bool visible = TryGetSelectedSignatureBuilding(out Entity building);
             int globalMaxVehicles = Mod.Settings?.MaxVehicles ?? SignatureFixSettings.DefaultMaxVehicles;
             int globalMaxStorage = Mod.Settings?.MaxStorage ?? SignatureFixSettings.DefaultMaxStorage;
             bool overridden = visible && EntityManager.HasComponent<SignatureBuildingLimits>(building);
@@ -130,8 +135,7 @@ namespace SignatureFix
 
         private void SetBuildingLimits(int maxVehicles, int maxStorage)
         {
-            Entity building = m_SelectedInfo.selectedEntity;
-            if (!EntityManager.HasComponent<Signature>(building) || !EntityManager.HasBuffer<Renter>(building))
+            if (!TryGetSelectedSignatureBuilding(out Entity building))
                 return;
 
             SignatureBuildingLimits limits = new SignatureBuildingLimits(
@@ -148,11 +152,48 @@ namespace SignatureFix
 
         private void ResetBuildingLimits()
         {
-            Entity building = m_SelectedInfo.selectedEntity;
+            if (!TryGetSelectedSignatureBuilding(out Entity building))
+                return;
+
             if (EntityManager.HasComponent<SignatureBuildingLimits>(building))
                 EntityManager.RemoveComponent<SignatureBuildingLimits>(building);
 
             m_Frame = UpdateEveryFrames;
+        }
+
+        private bool TryGetSelectedSignatureBuilding(out Entity building)
+        {
+            Entity selected = m_SelectedInfo.selectedEntity;
+            if (EntityManager.HasComponent<Signature>(selected) && EntityManager.HasBuffer<Renter>(selected))
+            {
+                building = selected;
+                return true;
+            }
+
+            Entity company = selected;
+            if (!EntityManager.HasComponent<CompanyData>(company) &&
+                !CompanyUIUtils.HasCompany(EntityManager, selected, m_SelectedInfo.selectedPrefab, out company))
+            {
+                building = Entity.Null;
+                return false;
+            }
+
+            // ponytail: signature buildings are few; cache company-to-building links only if UI profiling makes this scan visible.
+            using NativeArray<Entity> signatureBuildings = m_SignatureBuildings.ToEntityArray(Allocator.Temp);
+            foreach (Entity candidate in signatureBuildings)
+            {
+                foreach (Renter renter in EntityManager.GetBuffer<Renter>(candidate, true))
+                {
+                    if (renter.m_Renter == company)
+                    {
+                        building = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            building = Entity.Null;
+            return false;
         }
 
         private void GetCargo(Entity vehicle, out Resource resource, out int cargo, out int capacity)

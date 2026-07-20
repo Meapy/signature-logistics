@@ -40,11 +40,11 @@ Only signature-building companies are changed. Ordinary zoned industry, service 
 	<Screenshot Value="Properties/Screenshots/building-logistics.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.1" />
+	<ModVersion Value="1.0.2" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Fixed per-building controls being hidden below long vehicle lists. Signature building limits now appear immediately above Vehicles in use, with UI fallbacks matching the current 20-vehicle and 500-tonne defaults." />
+	<ChangeLog Value="Fixed per-building controls not appearing when the selected-info panel exposes a signature factory through its renter company. Vehicle and storage overrides now resolve the correct building before they are shown, saved, or reset." />
 	<!--<ChangeLog>
 	</ChangeLog>-->
 	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />
