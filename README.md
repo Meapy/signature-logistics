@@ -4,7 +4,7 @@ A Cities: Skylines II code/UI mod that lets you choose the vehicle and storage l
 
 [Download on Paradox Mods](https://mods.paradoxplaza.com/mods/151747/Windows)
 
-![Per-building logistics controls](Fix-Signatures/Properties/Screenshots/global-settings.png)
+![Per-building logistics controls](Fix-Signatures/Properties/Screenshots/building-overrides.png)
 
 ## Usage
 
@@ -16,7 +16,7 @@ Open **Options > Signature Logistics** and configure:
 
 Changes save automatically, load on the next game start, and act as the defaults for existing signature buildings and buildings placed later.
 
-To customize one building, select a signature factory. The **Signature building limits** controls appear immediately above **Vehicles in use** and save a vehicle and storage override on that building in the current city. **Use global defaults** removes the override and returns that building to the Options values.
+To customize one building, select a signature factory. The **Building logistics** controls appear immediately above **Vehicles in use** and save a vehicle and storage override on that building in the current city. **Use global** removes the override and returns that building to the Options values.
 
 When a required production input plus deliveries already on the way falls below the restock target, the mod asks the game's normal purchase system for another truckload. The game still uses real local suppliers or outside connections, pays normal costs, and requires a working delivery route.
 

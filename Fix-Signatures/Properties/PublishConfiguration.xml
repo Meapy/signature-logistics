@@ -38,13 +38,14 @@ Only signature-building companies are changed. Ordinary zoned industry, service 
 	<Screenshot Value="Properties/Screenshots/vehicle-details.png" />
 	<Screenshot Value="Properties/Screenshots/global-settings.png" />
 	<Screenshot Value="Properties/Screenshots/building-logistics.png" />
+	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
 	<ModVersion Value="1.0.2" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Fixed per-building controls not appearing when the selected-info panel exposes a signature factory through its renter company. Vehicle and storage overrides now resolve the correct building before they are shown, saved, or reset." />
+	<ChangeLog Value="Fixed per-building vehicle and storage controls not appearing for signature factories. The controls now resolve the selected factory correctly, render once in a compact native panel, save custom limits, and provide a clear Use global reset action." />
 	<!--<ChangeLog>
 	</ChangeLog>-->
 	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />
