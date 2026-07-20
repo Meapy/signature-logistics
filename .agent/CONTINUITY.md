@@ -24,6 +24,7 @@
 - 2026-07-20T13:54Z [USER] The deduplicated native layout is functional but still visually oversized/off; make it more compact and balanced.
 - 2026-07-20T14:10Z [USER] Make the per-building global-default reset action smaller and fit it cleanly within the panel.
 - 2026-07-20T14:29Z [USER] Publish the confirmed fix, push and merge it on GitHub, publish it to Paradox Mods, and add the supplied final in-game screenshot to the store page.
+- 2026-07-20T15:09Z [USER] Investigate why signature-building companies change frequently and reduce avoidable bankruptcies/company churn; deploy a test build but do not publish before user confirmation.
 
 [DECISIONS]
 
@@ -51,6 +52,8 @@
 - 2026-07-20T12:43Z [CODE] Resolve the selected info-panel entity through its renter company and back to the owning signature building; use that same resolved entity for visibility, save, and reset.
 - 2026-07-20T13:19Z [CODE] Wrap `Game.UI.InGame.VehiclesSection` through the native `selectedInfoSectionComponents` map instead of replacing the already-captured `VehiclesSection` module export.
 - 2026-07-20T13:43Z [CODE] Make both section-map and vehicle-row wrappers idempotent with global Symbol markers, and render limits with native `InfoSection`, `InfoRow`, and secondary `Button` components.
+- 2026-07-20T15:09Z [CODE] Preserve a signature tenant when the game marks it `MovingAway` for a random tax/worker-shortage roll or before a genuine bankruptcy matures; allow move-away only when exact company worth remains below the game threshold for more than 65,536 frames.
+- 2026-07-20T15:09Z [CODE] Before the mod queues a priority input purchase, reserve that truckload's industrial value and require the remaining company worth to stay at or above the game bankruptcy limit; native company buying remains available.
 
 [PROGRESS]
 
@@ -79,6 +82,7 @@
 - 2026-07-20T14:10Z [CODE] Replaced the oversized standalone reset action with a native `Building override` row and short `Use global` button; UI build/smoke test passes and deployed hashes are MJS `714224FC9D430FD7185659432D4ED53D57F972116AC61CA6389BCB0ACD7D0B63` and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
 - 2026-07-20T14:29Z [CODE] Removed temporary selection diagnostics, added the exact supplied screenshot as `building-overrides.png`, refreshed README/store wording, and expanded the 1.0.2 changelog to cover selection resolution, deduplication, and the compact native controls.
 - 2026-07-20T14:29Z [TOOL] Docker is not installed; the pinned local UI build/smoke test passed. The managed Release staged outside the running game's locked mod folder with 0 warnings/errors; validated package hashes are DLL `C5532765F36AA145FDB36285DEC6CF93987DD23358510E2AC600512831D78D79`, MJS `714224FC9D430FD7185659432D4ED53D57F972116AC61CA6389BCB0ACD7D0B63`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
+- 2026-07-20T15:09Z [CODE] Added exact company-worth evaluation, mature-bankruptcy discrimination, non-bankruptcy tenant protection, a bankruptcy-cushion check for priority purchases, an event log, documentation, and an eight-case compiled-assembly boundary check.
 
 [DISCOVERIES]
 
@@ -109,6 +113,9 @@
 - 2026-07-20T12:59Z [TOOL] Fresh logs prove the game loaded managed code and UI from local `Mods/Fix-Signatures`, not Paradox cache; there are no Signature Logistics exceptions. The first diagnostic build compiled but full-folder deployment was blocked by the running game's native DLL lock, so the matching managed DLL SHA-256 `2833AC96311E37D879A5074B40ED5889E00C11926379CC93E9E642FF85EC1AB9` was copied directly for restart testing.
 - 2026-07-20T13:19Z [TOOL] Even with the current MJS registered, `WriteBuildingLimits` produced no diagnostic line, proving the wrapper never rendered. Installed native UI shows `selectedInfoSectionComponents["Game.UI.InGame.VehiclesSection"]` captures the original `VehiclesSection` function before mod registration; changing the module export later cannot update that stored reference, while its body still reads the mutable `VehicleItem` export, explaining why cargo rows worked.
 - 2026-07-20T13:43Z [TOOL] In-game screenshot proves the map extension and backend override now work; duplicate panels result from two UI registrations nesting the map wrapper, while custom HTML/CSS uses unsupported game UI properties. Updated bundle smoke test passes and explicitly rejects a second wrapper.
+- 2026-07-20T15:09Z [TOOL] Installed `Game.dll` shows `CompanyMoveAwaySystem` adds the same `MovingAway` component for both bankruptcy and a separate random roll: `(tax rate - 10) * 2.5`, plus 5 for an uneducated-worker warning and 20 for an educated-worker warning; the latter alone averages one company replacement every five in-game days.
+- 2026-07-20T15:09Z [TOOL] Genuine bankruptcy uses `EconomyUtils.GetCompanyTotalWorth`, the configured `m_CompanyBankruptcyLimit`, and a low-income duration greater than 65,536 frames; live logs showed one signature building replace renter company `2936053:1` with `2959176:1` in about 17 minutes.
+- 2026-07-20T15:09Z [TOOL] Installed `ResourceBuyerSystem` subtracts a company's complete purchase price without the household-style cash cap; aggressive priority restocking can therefore consume the remaining cushion through purchase and transport costs even though inventory retains asset value.
 
 [OUTCOMES]
 
@@ -139,3 +146,4 @@
 - 2026-07-20T12:43Z [TOOL] The selection-resolution fix compiles and post-processes successfully in Release with 0 warnings/errors; IL inspection confirms visibility, save, and reset all call the resolver, and the deployed local-game DLL matches build SHA-256 `809DB7E295391AE55E4D095EA6633093B74DE260F0456163F9C20624CBCA494F`. Per user instruction, Paradox 1.0.2 publication is paused until in-game confirmation.
 - 2026-07-20T14:34Z [TOOL] GitHub PR #2 (`feature/resolve-building-selection` into `master`) passed GitGuardian and merged as `0da6a5f9f8134f0551b533b4df46ca199da34e84`; both feature commits resolve to the `Meapy` account and use Daniel Krasovski as author and committer.
 - 2026-07-20T14:34Z [TOOL] Paradox ModPublisher successfully published Signature Logistics `1.0.2` to mod ID `151747`, including the validated DLL/MJS/CSS package, updated changelog, and four screenshots. The public page returns HTTP 200 with title `Signature Logistics - Paradox Mods`.
+- 2026-07-20T15:09Z [TOOL] Bankruptcy/churn test build compiles and post-processes in Release with 0 warnings/errors; eight compiled-helper boundary checks pass, `git diff --check` passes, and local deployed DLL SHA-256 matches `A2A8C2A3B351A8145AA3DEA3D7E6E62443EC48AB85DF3A89D710BB001FB302FB`. Restart/in-game observation remains required; nothing was pushed or published.
