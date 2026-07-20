@@ -28,6 +28,7 @@
 - 2026-07-20T15:49Z [USER] Add a row beneath the Company section showing why the previous signature-building tenant left, and replace the unrecorded catch-all with every reliably detectable cause.
 - 2026-07-20T16:20Z [USER] Publish the completed company-stability and departure-history feature, update documentation and the Paradox Mods page, push it to GitHub, and merge it.
 - 2026-07-20T16:53Z [USER] Create a transferable Codex skill from the Cities: Skylines II mod-development lessons and install it for future mod projects.
+- 2026-07-20T17:15Z [USER] Give each signature-company tenant twice its vanilla starting resources after move-in, superseding the initial request to double starting money; deploy locally for testing without publishing.
 
 [DECISIONS]
 
@@ -60,6 +61,7 @@
 - 2026-07-20T15:49Z [CODE] Persist current, pending, and previous tenant state on each signature building; record the strongest active warning at mature bankruptcy, distinguish rent/property relocation, and use `External/load replacement` only when the game leaves no observable cause.
 - 2026-07-20T15:49Z [CODE] Wrap the native `Game.UI.InGame.CompanySection` through the existing selected-info component map and render one native `Previous company left` row immediately after it; show `No departure recorded` until a future observed change occurs.
 - 2026-07-20T16:53Z [CODE] Package the reusable workflow as personal skill `build-cities-skylines-2-mods`, separating concise core instructions from ECS/game-code, UI/persistence, and build/publish references plus two deterministic PowerShell helpers; exclude proprietary assemblies and machine-specific paths.
+- 2026-07-20T17:15Z [CODE] Use saved `SignatureCompanyHistory.m_CurrentCompany` transitions as the one-time move-in gate; duplicate every positive non-money resource stack with integer saturation, leave bank balance unchanged, and treat a missing history component as the current tenant's first observation so existing pre-feature cities receive the boost once.
 
 [PROGRESS]
 
@@ -126,6 +128,7 @@
 - 2026-07-20T15:09Z [TOOL] Installed `ResourceBuyerSystem` subtracts a company's complete purchase price without the household-style cash cap; aggressive priority restocking can therefore consume the remaining cushion through purchase and transport costs even though inventory retains asset value.
 - 2026-07-20T15:49Z [TOOL] Installed `Game.dll` defines detailed household `MoveAwayReason` values, but `CompanyMoveAwaySystem` initializes `MovingAway` to its default `None` for both random churn and bankruptcy; company causes must be inferred from exact worth/timer state and active company/workforce warnings.
 - 2026-07-20T15:49Z [TOOL] `PropertyProcessingSystem`, `PropertyRenterSystem`, and `RentAdjustSystem` can remove a company's `PropertyRenter` link independently of `CompanyMoveAwaySystem`; that observable path is classified as rent/property relocation. Remaining unobservable paths are serialization repair/migration, debug tooling, another mod, or removal while this mod was absent.
+- 2026-07-20T17:15Z [TOOL] Installed `Game.Citizens.CompanyInitializeSystem.InitializeCompanyJob` seeds industrial processing companies with 15,000 units of each input, commercial processing companies with 3,000, and eligible output/extractor stock with 1,000; `AddStartingResources` also charges Money for inputs, and there is no company-starting-capital economy parameter.
 
 [OUTCOMES]
 
@@ -161,3 +164,4 @@
 - 2026-07-20T16:34Z [TOOL] GitHub PR #3 passed GitGuardian and merged the company-stability, departure-history, and 1.0.3 release commits into `master` as `afd3786ff4c5b311e24eceb7102a5929a9aa28c5`; all commits resolve to Daniel Krasovski/Meapy.
 - 2026-07-20T16:34Z [TOOL] Paradox ModPublisher successfully published Signature Logistics `1.0.3` to mod ID `151747` with the revised description, changelog, GitHub link, and four screenshots. The exact staged package passed the UI smoke test, a 0-warning/0-error managed Release build, 13 compiled checks, and hashes DLL `F8FE26DFBCC6505F67DF1C79DC35A5826E9405C17D6BD041C539985969597107`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. The public page returns HTTP 200 with title `Signature Logistics - Paradox Mods`.
 - 2026-07-20T16:53Z [TOOL] Installed `build-cities-skylines-2-mods` to `C:\Users\dkras\.codex\skills\build-cities-skylines-2-mods`; the official quick validator passes in the final location, all seven installed files hash-match the validated source, environment discovery succeeds against the installed toolchain, and release verification passes both present-file and expected missing-file checks.
+- 2026-07-20T17:15Z [TOOL] Starting-resource test Release builds/post-processes with 0 warnings/errors, 18 compiled helper checks pass, and the local test deployment matches DLL `A0362C510C19B3AABB6FDA6ECDEE99B28D3B0A96D298329E5079D587A3F41ABB`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Cities2 was running during deployment; restart/in-game move-in verification remains required and nothing was pushed or published.

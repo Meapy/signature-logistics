@@ -53,6 +53,7 @@ namespace SignatureFix
             int patchedStorageCompanies = 0;
             int queuedPurchases = 0;
             int protectedTenants = 0;
+            long startingResourcesGranted = 0;
             ComponentLookup<Game.Vehicles.DeliveryTruck> deliveryTrucks = GetComponentLookup<Game.Vehicles.DeliveryTruck>(true);
             ComponentLookup<ResourceData> resourceDatas = GetComponentLookup<ResourceData>(true);
             BufferLookup<LayoutElement> layouts = GetBufferLookup<LayoutElement>(true);
@@ -85,8 +86,12 @@ namespace SignatureFix
                     IndustrialProcessData process = EntityManager.HasComponent<IndustrialProcessData>(companyPrefab)
                         ? EntityManager.GetComponentData<IndustrialProcessData>(companyPrefab)
                         : default;
-                    int companyWorth = GetCompanyWorth(company, process, resourcePrefabs, ref resourceDatas, ref deliveryTrucks, ref layouts);
+                    bool newTenant = !EntityManager.HasComponent<SignatureCompanyHistory>(building) ||
+                        EntityManager.GetComponentData<SignatureCompanyHistory>(building).m_CurrentCompany != company;
                     SignatureCompanyHistory history = ObserveCompany(building, company);
+                    if (newTenant)
+                        startingResourcesGranted += DoubleStartingResources(company);
+                    int companyWorth = GetCompanyWorth(company, process, resourcePrefabs, ref resourceDatas, ref deliveryTrucks, ref layouts);
 
                     // The game also uses MovingAway for random tax/worker-shortage churn. Preserve the
                     // signature tenant unless its worth has stayed below the real bankruptcy limit past the grace period.
@@ -155,6 +160,38 @@ namespace SignatureFix
 
             if (protectedTenants > 0)
                 Mod.log.Info($"Prevented {protectedTenants} non-bankruptcy signature tenant move-away event(s).");
+
+            if (startingResourcesGranted > 0)
+                Mod.log.Info($"Granted {startingResourcesGranted} extra starting resource units to new signature tenant(s).");
+        }
+
+        private long DoubleStartingResources(Entity company)
+        {
+            if (!EntityManager.HasBuffer<Resources>(company))
+                return 0;
+
+            DynamicBuffer<Resources> resources = EntityManager.GetBuffer<Resources>(company);
+            long granted = 0;
+            int resourceCount = resources.Length;
+            for (int i = 0; i < resourceCount; i++)
+            {
+                Resources startingResource = resources[i];
+                if (startingResource.m_Resource == Resource.Money || startingResource.m_Resource == Resource.NoResource)
+                    continue;
+
+                int bonus = GetStartingResourceBonus(startingResource.m_Amount);
+                if (bonus > 0)
+                {
+                    EconomyUtils.AddResources(startingResource.m_Resource, bonus, resources);
+                    granted += bonus;
+                }
+            }
+            return granted;
+        }
+
+        internal static int GetStartingResourceBonus(int amount)
+        {
+            return amount > 0 ? (int)Unity.Mathematics.math.min(amount, (long)int.MaxValue - amount) : 0;
         }
 
         private bool QueueInputPurchase(
