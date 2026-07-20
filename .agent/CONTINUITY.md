@@ -29,6 +29,7 @@
 - 2026-07-20T16:20Z [USER] Publish the completed company-stability and departure-history feature, update documentation and the Paradox Mods page, push it to GitHub, and merge it.
 - 2026-07-20T16:53Z [USER] Create a transferable Codex skill from the Cities: Skylines II mod-development lessons and install it for future mod projects.
 - 2026-07-20T17:15Z [USER] Give each signature-company tenant twice its vanilla starting resources after move-in, superseding the initial request to double starting money; deploy locally for testing without publishing.
+- 2026-07-20T18:19Z [USER] Publish the tested starting-resource feature to Paradox Mods, push it to GitHub, and merge it.
 
 [DECISIONS]
 
@@ -93,6 +94,8 @@
 - 2026-07-20T15:09Z [CODE] Added exact company-worth evaluation, mature-bankruptcy discrimination, non-bankruptcy tenant protection, a bankruptcy-cushion check for priority purchases, an event log, documentation, and an eight-case compiled-assembly boundary check.
 - 2026-07-20T15:49Z [CODE] Added serializable `SignatureCompanyHistory`, bankruptcy-warning and property-relocation classification, a throttled UI binding, an idempotent Company-section wrapper, updated smoke/boundary checks, and player/build documentation.
 - 2026-07-20T16:20Z [CODE] Prepared Paradox Mods version `1.0.3` with clearer stability/history explanations, an updated changelog, and matching repository version documentation.
+- 2026-07-20T18:23Z [CODE] Prepared version `1.0.4` store metadata and documentation for the one-time doubled non-money starting-resource grant.
+- 2026-07-20T18:23Z [TOOL] The exact staged 1.0.4 package passed the UI production build/smoke test, a 0-warning/0-error managed Release build, 18 compiled checks, and release verification; hashes are DLL `C382430F072275304121415F49E686C7002CBBD9914F4266EA990259D3D9D5E3`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
 
 [DISCOVERIES]
 

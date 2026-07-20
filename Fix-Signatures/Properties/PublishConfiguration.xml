@@ -4,7 +4,7 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Signature Logistics" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Stabilize signature factories with configurable logistics, safer restocking, fewer company replacements, and clearer delivery information." />
+	<ShortDescription Value="Stabilize signature factories with configurable logistics, doubled starting stock, safer restocking, and clearer deliveries." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
@@ -25,6 +25,10 @@ MORE STABLE COMPANIES
 The game can use the same internal move-away marker for genuine bankruptcy and random tax or worker-shortage churn. Signature Logistics preserves a signature tenant through the random churn path while still allowing genuine bankruptcy after the company's total worth stays below the game's threshold for the full grace period.
 
 Priority restocking also checks the company's exact game-calculated worth before ordering. The mod pauses its extra purchase when that truckload would consume the remaining bankruptcy cushion; normal production, selling, and the game's own economy continue.
+
+MORE STARTING RESOURCES
+
+Each newly observed signature tenant receives a second copy of its positive non-money starting resources. Typical industrial inputs increase from 15 tonnes to 30 tonnes each, commercial inputs from 3 tonnes to 6 tonnes each, and eligible 1-tonne output or extractor stock to 2 tonnes. The company's bank balance is unchanged, and saved tenant history prevents the grant from repeating after save/reload. Existing cities may grant the current tenant this one-time boost when first loaded with this version.
 
 WHY THE PREVIOUS COMPANY LEFT
 
@@ -51,11 +55,11 @@ Only signature-building companies are changed. Ordinary zoned industry, service 
 	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.3" />
+	<ModVersion Value="1.0.4" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Reduced avoidable signature-company replacements by separating random tax/worker move-away churn from genuine bankruptcy. Priority restocking now preserves the game's bankruptcy cushion. Added saved previous-company departure reasons beneath the Company section, including bankruptcy warnings, rent/property relocation, and external/load replacement." />
+	<ChangeLog Value="New signature-building tenants now receive twice their positive non-money starting resources, giving factories a larger production buffer without changing company cash. Typical industrial inputs increase from 15 t to 30 t each, commercial inputs from 3 t to 6 t each, and eligible 1 t output/extractor stock to 2 t. Saved tenant history prevents the boost from repeating after save/reload." />
 	<!--<ChangeLog>
 	</ChangeLog>-->
 	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />
