@@ -11,15 +11,21 @@ const buildingLimits$ = bindValue("SignatureFix", "buildingLimits", {
   globalMaxVehicles: 20,
   globalMaxStorage: 500
 });
+const companyDeparture$ = bindValue("SignatureFix", "companyDeparture", {
+  visible: false,
+  reason: "No departure recorded"
+});
 const vehiclesModule = "game-ui/game/components/selected-info-panel/selected-info-sections/shared-sections/vehicles-section/vehicles-section.tsx";
 const selectedInfoSectionsModule = "game-ui/game/components/selected-info-panel/selected-info-sections/selected-info-sections.tsx";
 const vehiclesSectionType = "Game.UI.InGame.VehiclesSection";
+const companySectionType = "Game.UI.InGame.CompanySection";
 const sliderModule = "game-ui/common/input/slider/slider.tsx";
 const infoSectionModule = "game-ui/game/components/selected-info-panel/shared-components/info-section/info-section.tsx";
 const infoRowModule = "game-ui/game/components/selected-info-panel/shared-components/info-row/info-row.tsx";
 const buttonModule = "game-ui/common/input/button/button.tsx";
 const secondaryButtonThemeModule = "game-ui/common/input/button/themes/paradox-secondary-button.module.scss";
 const buildingLimitsMarker = Symbol.for("SignatureLogistics.BuildingLimits");
+const companyDepartureMarker = Symbol.for("SignatureLogistics.CompanyDeparture");
 const vehicleDetailsMarker = Symbol.for("SignatureLogistics.VehicleDetails");
 
 function sameEntity(left, right) {
@@ -133,10 +139,32 @@ export default function register(moduleRegistry) {
     );
   };
 
+  const withCompanyDeparture = (OriginalCompanySection) => (props) => {
+    const departure = useValue(companyDeparture$);
+    return React.createElement(
+      React.Fragment,
+      null,
+      React.createElement(OriginalCompanySection, props),
+      departure.visible && React.createElement(
+        InfoSection,
+        null,
+        React.createElement(InfoRow, {
+          disableFocus: true,
+          left: "Previous company left",
+          right: departure.reason
+        })
+      )
+    );
+  };
+
   moduleRegistry.extend(selectedInfoSectionsModule, "selectedInfoSectionComponents", (components) => {
     if (!components[vehiclesSectionType][buildingLimitsMarker]) {
       components[vehiclesSectionType] = withBuildingLimits(components[vehiclesSectionType]);
       components[vehiclesSectionType][buildingLimitsMarker] = true;
+    }
+    if (!components[companySectionType][companyDepartureMarker]) {
+      components[companySectionType] = withCompanyDeparture(components[companySectionType]);
+      components[companySectionType][companyDepartureMarker] = true;
     }
     return components;
   });
