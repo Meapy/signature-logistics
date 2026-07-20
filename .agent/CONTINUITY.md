@@ -32,6 +32,7 @@
 - 2026-07-20T18:19Z [USER] Publish the tested starting-resource feature to Paradox Mods, push it to GitHub, and merge it.
 - 2026-07-20T18:31Z [USER] Make signature-company buying more aggressive and efficient: balance imports by recipe needs, prefer a full truck even when it overshoots the exact deficit, and avoid intentionally buying less than 75% of vehicle capacity.
 - 2026-07-20T18:31Z [USER] Publish the completed smarter-restocking feature to Paradox Mods, push it to GitHub, and merge it.
+- 2026-07-20T19:00Z [USER] Version 1.0.5 still produces many returning buying trucks carrying roughly 0-1.5 tonnes; stop the low-capacity purchase flood.
 
 [DECISIONS]
 
@@ -66,6 +67,7 @@
 - 2026-07-20T16:53Z [CODE] Package the reusable workflow as personal skill `build-cities-skylines-2-mods`, separating concise core instructions from ECS/game-code, UI/persistence, and build/publish references plus two deterministic PowerShell helpers; exclude proprietary assemblies and machine-specific paths.
 - 2026-07-20T17:15Z [CODE] Use saved `SignatureCompanyHistory.m_CurrentCompany` transitions as the one-time move-in gate; duplicate every positive non-money resource stack with integer saturation, leave bank balance unchanged, and treat a missing history component as the current tenant's first observation so existing pre-feature cities receive the boost once.
 - 2026-07-20T18:31Z [CODE] Keep the 64-tick native `ResourceBuyer` pipeline, allocate each input's target by its recipe consumption weight, select the lowest target coverage after stock/pending/inbound amounts, and request one 100%-capacity load with a 75% storage/financial fallback rather than the exact shortfall.
+- 2026-07-20T19:00Z [CODE] Count an empty outbound buying truck as its selected vehicle capacity until it loads, then count actual returning cargo; route only the mod's priority restock requests to imports so concurrent local sales cannot clip them after pathfinding, while leaving vanilla local company buying unchanged.
 
 [PROGRESS]
 
@@ -103,8 +105,13 @@
 - 2026-07-20T18:49Z [TOOL] The smarter-restocking Release build and Unity post-processing pass with 0 warnings/errors; 32 compiled checks and exact-package verification pass with DLL `67EFDA6CC7F3DB58C973B282C2BFE61EED5BC8ECDC2AE46ED5668BA72899549C`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Cities2 is running as PID 47932, so local deployment is paused to avoid a locked or mismatched package.
 - 2026-07-20T18:04Z [CODE] Prepared Paradox Mods version `1.0.5` with balanced full-load restocking store copy, a matching changelog, and repository release documentation.
 - 2026-07-20T18:05Z [TOOL] The exact staged 1.0.5 package passed a 0-warning/0-error managed Release build, Unity post-processing, 32 compiled behavior checks, and release verification; hashes are DLL `8C574E1A7128699449457DDF9D31AFD8B619FD3209FB62525F115746E7C64BC0`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
+- 2026-07-20T19:00Z [CODE] Replaced cargo-only in-flight accounting with empty-truck capacity reservations and made supplemental priority restocking import-only; added four compiled reservation checks and updated behavior documentation.
+- 2026-07-20T19:05Z [TOOL] The initial staged partial-load build passed 36 checks with DLL `D068D27214832DC506BAEB46CA6C9A35DF66D2ED13C343E57948EC8C4504B26D`; it is superseded by the final settings-copy rebuild below.
+- 2026-07-20T19:09Z [TOOL] The final staged partial-load fix builds and Unity-post-processes with 0 warnings/errors; 36 compiled behavior checks and exact-package verification pass with DLL `2795AEAE854E28D4849C622137F4B3E0031B1CEFB120E067A3E642BEB83F825A`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Cities2 remains running as PID 47064, so live-folder deployment is pending a safe game close/restart and nothing is published.
 
 [DISCOVERIES]
+
+- 2026-07-20T19:00Z [TOOL] Installed `Game.dll` shows `VehicleUtils.GetBuyingTrucksLoad` sums only `DeliveryTruck.m_Amount`; outbound buying trucks are empty, so the 64-tick mod saw zero incoming stock and could queue the same deficit repeatedly. `ResourceBuyerSystem.ProcessResourceBuyer` later clips a local sale to remaining seller stock, allowing concurrent buyers to turn a pathfinder-eligible request into the observed 0-1.5 tonne return.
 
 - 2026-07-17T13:38Z [TOOL] Inspection of the installed `Game.dll` showed `ProcessingCompany.Initialize` copies `ProcessingCompany.transports` to `TransportCompanyData.m_MaxTransports`; delivery pathfinding and vehicle UI read that component as the cap.
 - 2026-07-17T13:38Z [TOOL] The local `CSII_TOOLPATH` user environment variable is unset; the installed toolchain is under the game's `.ModdingToolchain` directory.
