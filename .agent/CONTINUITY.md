@@ -30,6 +30,8 @@
 - 2026-07-20T16:53Z [USER] Create a transferable Codex skill from the Cities: Skylines II mod-development lessons and install it for future mod projects.
 - 2026-07-20T17:15Z [USER] Give each signature-company tenant twice its vanilla starting resources after move-in, superseding the initial request to double starting money; deploy locally for testing without publishing.
 - 2026-07-20T18:19Z [USER] Publish the tested starting-resource feature to Paradox Mods, push it to GitHub, and merge it.
+- 2026-07-20T18:31Z [USER] Make signature-company buying more aggressive and efficient: balance imports by recipe needs, prefer a full truck even when it overshoots the exact deficit, and avoid intentionally buying less than 75% of vehicle capacity.
+- 2026-07-20T18:31Z [USER] Publish the completed smarter-restocking feature to Paradox Mods, push it to GitHub, and merge it.
 
 [DECISIONS]
 
@@ -63,6 +65,7 @@
 - 2026-07-20T15:49Z [CODE] Wrap the native `Game.UI.InGame.CompanySection` through the existing selected-info component map and render one native `Previous company left` row immediately after it; show `No departure recorded` until a future observed change occurs.
 - 2026-07-20T16:53Z [CODE] Package the reusable workflow as personal skill `build-cities-skylines-2-mods`, separating concise core instructions from ECS/game-code, UI/persistence, and build/publish references plus two deterministic PowerShell helpers; exclude proprietary assemblies and machine-specific paths.
 - 2026-07-20T17:15Z [CODE] Use saved `SignatureCompanyHistory.m_CurrentCompany` transitions as the one-time move-in gate; duplicate every positive non-money resource stack with integer saturation, leave bank balance unchanged, and treat a missing history component as the current tenant's first observation so existing pre-feature cities receive the boost once.
+- 2026-07-20T18:31Z [CODE] Keep the 64-tick native `ResourceBuyer` pipeline, allocate each input's target by its recipe consumption weight, select the lowest target coverage after stock/pending/inbound amounts, and request one 100%-capacity load with a 75% storage/financial fallback rather than the exact shortfall.
 
 [PROGRESS]
 
@@ -96,6 +99,10 @@
 - 2026-07-20T16:20Z [CODE] Prepared Paradox Mods version `1.0.3` with clearer stability/history explanations, an updated changelog, and matching repository version documentation.
 - 2026-07-20T18:23Z [CODE] Prepared version `1.0.4` store metadata and documentation for the one-time doubled non-money starting-resource grant.
 - 2026-07-20T18:23Z [TOOL] The exact staged 1.0.4 package passed the UI production build/smoke test, a 0-warning/0-error managed Release build, 18 compiled checks, and release verification; hashes are DLL `C382430F072275304121415F49E686C7002CBBD9914F4266EA990259D3D9D5E3`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
+- 2026-07-20T18:49Z [CODE] Added recipe-weighted input targets, lowest-coverage selection, inbound-aware storage headroom, 100%-preferred/75%-minimum priority requests, settings help, README behavior notes, and compiled boundary checks while retaining the 64-tick native buyer schedule.
+- 2026-07-20T18:49Z [TOOL] The smarter-restocking Release build and Unity post-processing pass with 0 warnings/errors; 32 compiled checks and exact-package verification pass with DLL `67EFDA6CC7F3DB58C973B282C2BFE61EED5BC8ECDC2AE46ED5668BA72899549C`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Cities2 is running as PID 47932, so local deployment is paused to avoid a locked or mismatched package.
+- 2026-07-20T18:04Z [CODE] Prepared Paradox Mods version `1.0.5` with balanced full-load restocking store copy, a matching changelog, and repository release documentation.
+- 2026-07-20T18:05Z [TOOL] The exact staged 1.0.5 package passed a 0-warning/0-error managed Release build, Unity post-processing, 32 compiled behavior checks, and release verification; hashes are DLL `8C574E1A7128699449457DDF9D31AFD8B619FD3209FB62525F115746E7C64BC0`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
 
 [DISCOVERIES]
 
@@ -132,6 +139,7 @@
 - 2026-07-20T15:49Z [TOOL] Installed `Game.dll` defines detailed household `MoveAwayReason` values, but `CompanyMoveAwaySystem` initializes `MovingAway` to its default `None` for both random churn and bankruptcy; company causes must be inferred from exact worth/timer state and active company/workforce warnings.
 - 2026-07-20T15:49Z [TOOL] `PropertyProcessingSystem`, `PropertyRenterSystem`, and `RentAdjustSystem` can remove a company's `PropertyRenter` link independently of `CompanyMoveAwaySystem`; that observable path is classified as rent/property relocation. Remaining unobservable paths are serialization repair/migration, debug tooling, another mod, or removal while this mod was absent.
 - 2026-07-20T17:15Z [TOOL] Installed `Game.Citizens.CompanyInitializeSystem.InitializeCompanyJob` seeds industrial processing companies with 15,000 units of each input, commercial processing companies with 3,000, and eligible output/extractor stock with 1,000; `AddStartingResources` also charges Money for inputs, and there is no company-starting-capital economy parameter.
+- 2026-07-20T18:31Z [TOOL] Installed `ResourceBuyerSystem.FindShopForCompany` forwards the requested amount into `SetupQueueTarget.m_Value`; `SetupResourceSellerJob` rejects ordinary sellers below 50% of that request and adds a `100 * (1 - available/request)` path cost, while outside connections advertise the full request. `TripNeededSystem.SpawnDeliveryTruck` creates only one selected truck, so requesting beyond maximum capacity is unsafe; requesting exactly maximum capacity activates the native fuller-supplier preference without another pathfinder.
 
 [OUTCOMES]
 

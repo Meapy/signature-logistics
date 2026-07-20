@@ -67,7 +67,7 @@ namespace SignatureFix
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.MaxStorage)), "Maximum storage (tonnes)" },
                 { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.MaxStorage)), "Maximum total storage for each signature building, in tonnes. Changes apply during gameplay." },
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.RestockTarget)), "Input restock target (%)" },
-                { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.RestockTarget)), "Keep each required input at this percentage of its storage share by requesting normal local deliveries or imports. Higher values order sooner and use more vehicles." },
+                { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.RestockTarget)), "Keep required inputs at this percentage of their recipe-weighted storage share. Lower production coverage is restocked first, using full or at least 75%-full normal deliveries when possible." },
             };
         }
 
