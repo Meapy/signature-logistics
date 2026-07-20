@@ -4,7 +4,7 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Signature Logistics" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Stabilize signature factories with configurable logistics, balanced full-load restocking, stronger starting stock, and clearer deliveries." />
+	<ShortDescription Value="Stabilize signature factories with configurable logistics, dependable full-load imports, stronger starting stock, and clearer deliveries." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
@@ -36,9 +36,9 @@ The Company section records the previous signature tenant's departure reason and
 
 SMARTER RESTOCKING
 
-The mod compares required inputs by recipe-weighted production coverage, including materials in storage, pending purchases, and cargo already inbound. It prioritizes the material that will stop production first, then requests a full largest-compatible truck whenever storage and the company's bankruptcy cushion allow it. If a full load will not fit, the request can fall back to 75% capacity; smaller priority orders wait instead of intentionally dispatching nearly empty trucks.
+The mod compares required inputs by recipe-weighted production coverage, including materials in storage, pending purchases, and cargo already inbound. Empty outbound buying trucks reserve their full capacity until they load, preventing repeated orders against the same apparent deficit. It prioritizes the material that will stop production first, then requests a full largest-compatible truck whenever storage and the company's bankruptcy cushion allow it. If a full load will not fit, the request can fall back to 75% capacity; smaller priority orders wait instead of intentionally dispatching nearly empty trucks.
 
-Purchases still use the game's native suppliers, imports, pathfinding, costs, delivery vehicles, and road routes. Resources are never teleported or created for free. Supplier stock can change after pathfinding, so the game may occasionally load less than requested.
+Supplemental priority restocking uses outside connections for dependable stock and still pays normal import costs, uses real delivery vehicles, follows the native pathfinder, and requires working road routes. Resources are never teleported or created for free. The game's ordinary company purchases remain unchanged and can still buy from local suppliers.
 
 BETTER DELIVERY INFORMATION
 
@@ -57,11 +57,11 @@ Only signature-building companies are changed. Ordinary zoned industry, service 
 	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.5" />
+	<ModVersion Value="1.0.6" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Signature factories now balance required inputs by recipe-weighted production coverage instead of raw tonnes. Priority purchases count stored, pending, and inbound materials, request a full largest-compatible truck when possible, and will not intentionally submit less than 75% capacity. The 64-tick schedule and native local/import pathfinding remain unchanged." />
+	<ChangeLog Value="Fixed repeated low-load buying. Empty outbound buying trucks now reserve their full capacity, preventing the same deficit from spawning a new request every 64 ticks. Supplemental priority restocking now uses outside connections for dependable full loads, while the game's ordinary local company purchases remain unchanged." />
 	<!--<ChangeLog>
 	</ChangeLog>-->
 	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />

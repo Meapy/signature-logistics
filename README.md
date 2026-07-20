@@ -18,7 +18,7 @@ Changes save automatically, load on the next game start, and act as the defaults
 
 To customize one building, select a signature factory. The **Building logistics** controls appear immediately above **Vehicles in use** and save a vehicle and storage override on that building in the current city. **Use global** removes the override and returns that building to the Options values.
 
-When a required production input plus deliveries already on the way falls below the restock target, the mod asks the game's normal purchase system for another truckload. Inputs are compared by recipe-weighted production coverage rather than raw tonnes, so the material that will stop production first is restocked first. A priority purchase requests one full largest-compatible truck and only falls back as far as 75% when storage headroom or the bankruptcy cushion requires it; requests below that threshold wait instead of intentionally sending a nearly empty vehicle. The game still uses real local suppliers or outside connections, pays normal costs, and requires a working delivery route. A supplier's stock can still change after pathfinding, so the native game may occasionally load less than requested.
+When a required production input plus deliveries already on the way falls below the restock target, the mod asks the game's normal purchase system for another truckload. Inputs are compared by recipe-weighted production coverage rather than raw tonnes, so the material that will stop production first is restocked first. Empty outbound buying trucks reserve their full capacity until they load, preventing the mod from repeatedly ordering against the same apparent deficit. Priority restocking uses outside connections for dependable stock, requests one full largest-compatible truck, and only falls back as far as 75% when storage headroom or the bankruptcy cushion requires it; requests below that threshold wait instead of intentionally sending a nearly empty vehicle. The game still uses normal import costs, vehicles, pathfinding, and working road routes. The game's own ordinary company purchases remain unchanged and can still buy locally.
 
 Signature tenants are also protected from the game's random tax and worker-shortage move-away rolls, which use the same internal marker as bankruptcy and can otherwise replace a company even when it is financially viable. Genuine bankruptcy is still possible when a company remains below the game's bankruptcy threshold for the full grace period.
 
@@ -56,7 +56,7 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 ## Publish to Paradox Mods
 
-The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.0.5`, and has no mod or DLC dependencies.
+The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.0.6`, and has no mod or DLC dependencies.
 
 1. Run the UI test/build first: `npm test` in `Fix-Signatures.UI` (or use the Docker command above).
 2. For later releases, increment `ModVersion`, update `ChangeLog`, and publish the managed project with the `PublishNewVersion` profile in Visual Studio. The Release build refuses to package without the UI bundle and includes the `.mjs` and `.css` beside the DLL automatically.

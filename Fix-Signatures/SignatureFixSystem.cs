@@ -278,7 +278,9 @@ namespace SignatureFix
             EntityManager.AddComponentData(company, new ResourceBuyer
             {
                 m_Payer = company,
-                m_Flags = SetupTargetFlags.Industrial | SetupTargetFlags.Import,
+                // Priority orders use imports so the requested full load is not clipped by
+                // local seller stock changing between pathfinding and the actual sale.
+                m_Flags = SetupTargetFlags.Import,
                 m_ResourceNeeded = resource,
                 m_AmountNeeded = amountNeeded,
                 m_Location = EntityManager.GetComponentData<Transform>(building).m_Position
@@ -457,7 +459,7 @@ namespace SignatureFix
             }
 
             foreach (OwnedVehicle ownedVehicle in EntityManager.GetBuffer<OwnedVehicle>(company, true))
-                amount += Unity.Mathematics.math.max(0, VehicleUtils.GetBuyingTrucksLoad(ownedVehicle.m_Vehicle, candidate.m_Resource, ref deliveryTrucks, ref layouts));
+                amount += GetBuyingTruckCommitment(ownedVehicle.m_Vehicle, candidate.m_Resource, ref deliveryTrucks, ref layouts);
 
             int availableAmount = (int)Unity.Mathematics.math.min(amount, int.MaxValue);
             incomingAmount += availableAmount - storedAmount;
@@ -467,6 +469,56 @@ namespace SignatureFix
                 selectedAmount = availableAmount;
                 selectedTarget = targetAmount;
             }
+        }
+
+        private int GetBuyingTruckCommitment(
+            Entity vehicle,
+            Resource resource,
+            ref ComponentLookup<Game.Vehicles.DeliveryTruck> deliveryTrucks,
+            ref BufferLookup<LayoutElement> layouts)
+        {
+            long amount = 0;
+            if (layouts.HasBuffer(vehicle))
+            {
+                DynamicBuffer<LayoutElement> layout = layouts[vehicle];
+                if (layout.Length > 0)
+                {
+                    foreach (LayoutElement element in layout)
+                        amount += GetBuyingTruckUnitCommitment(element.m_Vehicle, resource, ref deliveryTrucks);
+                    return (int)Unity.Mathematics.math.min(amount, int.MaxValue);
+                }
+            }
+
+            return GetBuyingTruckUnitCommitment(vehicle, resource, ref deliveryTrucks);
+        }
+
+        private int GetBuyingTruckUnitCommitment(
+            Entity vehicle,
+            Resource resource,
+            ref ComponentLookup<Game.Vehicles.DeliveryTruck> deliveryTrucks)
+        {
+            if (!deliveryTrucks.HasComponent(vehicle))
+                return 0;
+
+            int capacity = 0;
+            if (EntityManager.HasComponent<PrefabRef>(vehicle))
+            {
+                Entity prefab = EntityManager.GetComponentData<PrefabRef>(vehicle).m_Prefab;
+                if (EntityManager.HasComponent<DeliveryTruckData>(prefab))
+                    capacity = EntityManager.GetComponentData<DeliveryTruckData>(prefab).m_CargoCapacity;
+            }
+
+            return GetBuyingTruckCommitmentAmount(deliveryTrucks[vehicle], resource, capacity);
+        }
+
+        internal static int GetBuyingTruckCommitmentAmount(Game.Vehicles.DeliveryTruck truck, Resource resource, int capacity)
+        {
+            if (truck.m_Resource != resource || (truck.m_State & DeliveryTruckFlags.Buying) == 0)
+                return 0;
+
+            return (truck.m_State & DeliveryTruckFlags.Loaded) != 0
+                ? Unity.Mathematics.math.max(0, truck.m_Amount)
+                : Unity.Mathematics.math.max(0, capacity);
         }
     }
 }

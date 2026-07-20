@@ -2,6 +2,8 @@ using System;
 using System.Reflection;
 using SignatureFix;
 using Unity.Entities;
+using Game.Economy;
+using Game.Vehicles;
 
 var type = typeof(SignatureFix.SignatureFixSystem);
 var flags = BindingFlags.Static | BindingFlags.NonPublic;
@@ -24,8 +26,9 @@ var minimumTruckLoadMethod = type.GetMethod("GetMinimumTruckLoad", flags);
 var fullLoadPurchaseMethod = type.GetMethod("GetFullLoadPurchaseAmount", flags);
 var inputTargetMethod = type.GetMethod("GetInputTargetAmount", flags);
 var selectInputMethod = type.GetMethod("ShouldSelectInput", flags);
+var truckCommitmentMethod = type.GetMethod("GetBuyingTruckCommitmentAmount", flags);
 if (purchaseMethod == null || bankruptcyMethod == null || observeMethod == null || reasonMethod == null || startingResourceMethod == null ||
-    minimumTruckLoadMethod == null || fullLoadPurchaseMethod == null || inputTargetMethod == null || selectInputMethod == null)
+    minimumTruckLoadMethod == null || fullLoadPurchaseMethod == null || inputTargetMethod == null || selectInputMethod == null || truckCommitmentMethod == null)
     throw new Exception("Compiled guard helper missing.");
 
 bool Safe(int worth, int limit, float price, int amount) =>
@@ -48,6 +51,9 @@ int InputTarget(int totalTarget, int weight, int totalWeight) =>
 
 bool SelectInput(int candidateAmount, int candidateTarget, int selectedAmount, int selectedTarget) =>
     (bool)selectInputMethod.Invoke(null, new object[] { candidateAmount, candidateTarget, selectedAmount, selectedTarget });
+
+int TruckCommitment(DeliveryTruck truck, Resource resource, int capacity) =>
+    (int)truckCommitmentMethod.Invoke(null, new object[] { truck, resource, capacity });
 
 if (!Safe(1000, 500, 2f, 250)) throw new Exception("Purchase at the threshold should be allowed.");
 if (Safe(999, 500, 2f, 250)) throw new Exception("Purchase below the threshold should be blocked.");
@@ -81,6 +87,13 @@ if (SelectInput(10000, 20000, 20000, 80000)) throw new Exception("Higher recipe 
 if (SelectInput(20000, 20000, 0, 0)) throw new Exception("An input already at target must not be selected.");
 if (!SelectInput(10000, 20000, 0, 0)) throw new Exception("The first under-target input must be selected.");
 
+var outboundTruck = new DeliveryTruck { m_Resource = Resource.Chemicals, m_State = DeliveryTruckFlags.Buying, m_Amount = 0 };
+var loadedTruck = new DeliveryTruck { m_Resource = Resource.Chemicals, m_State = DeliveryTruckFlags.Buying | DeliveryTruckFlags.Loaded, m_Amount = 1500 };
+if (TruckCommitment(outboundTruck, Resource.Chemicals, 20000) != 20000) throw new Exception("An empty outbound buying truck must reserve its full capacity.");
+if (TruckCommitment(loadedTruck, Resource.Chemicals, 20000) != 1500) throw new Exception("A loaded returning truck must count its actual cargo.");
+if (TruckCommitment(outboundTruck, Resource.Petrochemicals, 20000) != 0) throw new Exception("A buying truck must only reserve its own resource.");
+if (TruckCommitment(new DeliveryTruck { m_Resource = Resource.Chemicals }, Resource.Chemicals, 20000) != 0) throw new Exception("A non-buying truck must not reserve input stock.");
+
 var first = new Entity { Index = 10, Version = 1 };
 var second = new Entity { Index = 11, Version = 1 };
 var third = new Entity { Index = 12, Version = 1 };
@@ -99,4 +112,4 @@ if (history.m_LastReason != CompanyDepartureReason.PropertyRelocation)
 if ((string)reasonMethod.Invoke(null, new object[] { history.m_LastReason }) != "Relocated: Rent/property change")
     throw new Exception("The relocation reason must have a player-facing label.");
 
-Console.WriteLine("Bankruptcy, affordability, starting-resource, balanced-input, full-load, and company-history checks passed (32/32).");
+Console.WriteLine("Bankruptcy, affordability, starting-resource, balanced-input, full-load, in-flight reservation, and company-history checks passed (36/36).");
