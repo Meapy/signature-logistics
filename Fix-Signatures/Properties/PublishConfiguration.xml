@@ -65,6 +65,7 @@ Only signature-building companies are changed. Ordinary zoned industry, service 
 	<!--<ChangeLog>
 	</ChangeLog>-->
 	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />
+	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/mod-signature-logistics-configurable-vehicles-storage-imports-and-company-stability.1935899/" />
 	<!--Supported values Public, Private, Unlisted-->
 	<AccessLevel Value="Public" />
 </Publish>

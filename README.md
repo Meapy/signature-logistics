@@ -4,6 +4,8 @@ A Cities: Skylines II code/UI mod that lets you choose the vehicle and storage l
 
 [Download on Paradox Mods](https://mods.paradoxplaza.com/mods/151747/Windows)
 
+[Discuss the mod and leave feedback on the Paradox forum](https://forum.paradoxplaza.com/forum/threads/mod-signature-logistics-configurable-vehicles-storage-imports-and-company-stability.1935899/)
+
 ![Per-building logistics controls](Fix-Signatures/Properties/Screenshots/building-overrides.png)
 
 ## Usage
@@ -56,7 +58,7 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 ## Publish to Paradox Mods
 
-The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.0.6`, and has no mod or DLC dependencies.
+The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.0.6`, links to the public support forum, and has no mod or DLC dependencies.
 
 1. Run the UI test/build first: `npm test` in `Fix-Signatures.UI` (or use the Docker command above).
 2. For later releases, increment `ModVersion`, update `ChangeLog`, and publish the managed project with the `PublishNewVersion` profile in Visual Studio. The Release build refuses to package without the UI bundle and includes the `.mjs` and `.css` beside the DLL automatically.
