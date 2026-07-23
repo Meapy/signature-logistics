@@ -34,6 +34,7 @@
 - 2026-07-20T18:31Z [USER] Publish the completed smarter-restocking feature to Paradox Mods, push it to GitHub, and merge it.
 - 2026-07-20T19:00Z [USER] Version 1.0.5 still produces many returning buying trucks carrying roughly 0-1.5 tonnes; stop the low-capacity purchase flood.
 - 2026-07-20T19:41Z [USER] Publish the locally tested partial-load fix to Paradox Mods, push it to GitHub, and merge it.
+- 2026-07-22T19:25Z [USER] Create a public Paradox forum topic for Signature Logistics where players can leave comments, then attach it to the Paradox Mods listing.
 
 [DECISIONS]
 
@@ -111,9 +112,11 @@
 - 2026-07-20T19:09Z [TOOL] The final staged partial-load fix builds and Unity-post-processes with 0 warnings/errors; 36 compiled behavior checks and exact-package verification pass with DLL `2795AEAE854E28D4849C622137F4B3E0031B1CEFB120E067A3E642BEB83F825A`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. Cities2 remains running as PID 47064, so live-folder deployment is pending a safe game close/restart and nothing is published.
 - 2026-07-20T19:41Z [CODE] Prepared Paradox Mods version `1.0.6` with corrected in-flight reservation and dependable full-load priority-import store copy, changelog, and repository release documentation.
 - 2026-07-20T19:43Z [TOOL] The exact staged 1.0.6 package passed a 0-warning/0-error managed Release build, Unity post-processing, 36 compiled behavior checks, and release verification; hashes are DLL `D9A4C5143B31466D161D3BBF7C1E80FDC64C664DB0B1D54555E9FBF5718F2537`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`.
+- 2026-07-22T19:32Z [CODE] Added the live public discussion URL to the official `ForumLink` publish field, README, and maintained forum-post copy; no mod code or package version changed.
 
 [DISCOVERIES]
 
+- 2026-07-22T19:32Z [TOOL] The installed official ModPublisher exposes a dedicated `ForumLink` configuration field separate from generic external links; `Update --noAutoLogin` with the exact staged content provided a non-authenticated validation pass before the remote metadata write.
 - 2026-07-20T19:00Z [TOOL] Installed `Game.dll` shows `VehicleUtils.GetBuyingTrucksLoad` sums only `DeliveryTruck.m_Amount`; outbound buying trucks are empty, so the 64-tick mod saw zero incoming stock and could queue the same deficit repeatedly. `ResourceBuyerSystem.ProcessResourceBuyer` later clips a local sale to remaining seller stock, allowing concurrent buyers to turn a pathfinder-eligible request into the observed 0-1.5 tonne return.
 
 - 2026-07-17T13:38Z [TOOL] Inspection of the installed `Game.dll` showed `ProcessingCompany.Initialize` copies `ProcessingCompany.transports` to `TransportCompanyData.m_MaxTransports`; delivery pathfinding and vehicle UI read that component as the cap.
@@ -193,3 +196,4 @@
 - 2026-07-20T19:17Z [TOOL] After the user closed Cities2, deployed all eight matching partial-load test artifacts to the local `Mods\Fix-Signatures` folder and verified every SHA-256 against the staged package; deployed DLL is `2795AEAE854E28D4849C622137F4B3E0031B1CEFB120E067A3E642BEB83F825A`. Restart and in-game observation of truck count/load remain required; nothing was pushed or published.
 - 2026-07-20T19:47Z [TOOL] GitHub PR #6 passed GitGuardian and merged the partial-load buying-flood fix and 1.0.6 release metadata into `master` as `3ef31165cbf44c8ba10696a5525d1daf18d5788f`; the published feature/release commits resolve to Daniel Krasovski/Meapy, and the remote feature branch was removed.
 - 2026-07-20T19:47Z [TOOL] Paradox ModPublisher successfully published Signature Logistics `1.0.6` to mod ID `151747` with the dependable full-load import description, changelog, GitHub link, and four screenshots. The exact staged package passed a 0-warning/0-error managed Release build, 36 compiled checks, and release verification; hashes are DLL `D9A4C5143B31466D161D3BBF7C1E80FDC64C664DB0B1D54555E9FBF5718F2537`, MJS `DCDCAA5E9641FC90D3213A39E3F51E1661F0B5D690E5B6698B4A208110E9FC2A`, and CSS `EC079098319D8B786E0165B95A3AA5E2A31F605AB9D79CFD71FB2D94CC1EEF0C`. The public page returns HTTP 200 with title `Signature Logistics - Paradox Mods`.
+- 2026-07-22T19:32Z [TOOL] Created the public Signature Logistics discussion in the official Cities: Skylines 2 User Mods forum and attached thread `1935899` to Paradox Mods ID `151747` through a successful metadata-only publisher update. The listing remains public at version `1.0.6`; the public mod page returns HTTP 200 and the publisher confirms the exact forum URL, GitHub link, four screenshots, and unchanged package metadata.
