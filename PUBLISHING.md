@@ -6,7 +6,11 @@ Mod ID `151747` — https://mods.paradoxplaza.com/mods/151747/Windows
 
 ## 1. Before the upload
 
-- [ ] **`ModVersion`** bumped in `Fix-Signatures/Properties/PublishConfiguration.xml`.
+- [ ] **`ModVersion`** bumped in `Fix-Signatures/Properties/PublishConfiguration.xml`, and **higher
+      than what the listing already shows**. The publisher rejects a repeat with "Invalid
+      UserModVersion, value must be different than the existing version's." Check the live version on
+      the mod page rather than trusting this file — 1.0.7 was published without the bump ever being
+      committed, so the repository read 1.0.6 while the listing was already at 1.0.7.
 - [ ] **`ChangeLog`** contains **only** this version's notes. It is published verbatim against the
       version; the full history belongs in `CHANGELOG.md`.
 - [ ] **`ShortDescription`** is 200 characters or fewer. The publisher rejects the upload with

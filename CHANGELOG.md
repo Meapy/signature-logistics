@@ -4,7 +4,7 @@ Full history for Signature Logistics. The `ChangeLog` field in
 `Fix-Signatures/Properties/PublishConfiguration.xml` carries only the notes for the version being
 published, so it always holds the topmost entry here and nothing else.
 
-## 1.0.7 — unreleased
+## 1.0.8 — unreleased
 
 ### Fixed
 
@@ -32,6 +32,13 @@ published, so it always holds the topmost entry here and nothing else.
 
 - Nothing is written to the save. Affected cities need no migration: the incorrect prefab values
   were never serialized and clear when the game restarts.
+
+## 1.0.7
+
+Published to Paradox Mods without a matching commit — `PublishConfiguration.xml` in this repository
+was still at 1.0.6 when 1.0.8 was prepared, so the notes for this release are not recorded here.
+Copy them from the [listing](https://mods.paradoxplaza.com/mods/151747/Windows) to complete the
+record.
 
 ## 1.0.6
 
