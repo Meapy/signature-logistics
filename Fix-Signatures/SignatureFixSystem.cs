@@ -185,17 +185,20 @@ namespace SignatureFix
             // Hand back the prefab copies of tenants that have moved out or been deleted.
             m_PrefabScope.ReleaseUnlisted(EntityManager, m_LiveTenants);
 
+            // These run on a 64-frame interval. They are Debug rather than Info so a busy city does not write to the
+            // log file several times a second: every write is an opportunity to hit the Colossal.Logging reopen defect
+            // described in Mod.CreateLogger. Raise the log's effectiveness level to see them.
             if (scopedCompanies > 0)
-                Mod.log.Info($"Applied scoped vehicle and storage limits to {scopedCompanies} signature company prefab copies ({m_PrefabScope.ScopedCount} active).");
+                Mod.log.Debug($"Applied scoped vehicle and storage limits to {scopedCompanies} signature company prefab copies ({m_PrefabScope.ScopedCount} active).");
 
             if (queuedPurchases > 0)
                 Mod.log.Debug($"Queued {queuedPurchases} priority input purchase(s) for signature companies.");
 
             if (protectedTenants > 0)
-                Mod.log.Info($"Prevented {protectedTenants} non-bankruptcy signature tenant move-away event(s).");
+                Mod.log.Debug($"Prevented {protectedTenants} non-bankruptcy signature tenant move-away event(s).");
 
             if (startingResourcesGranted > 0)
-                Mod.log.Info($"Granted {startingResourcesGranted} extra starting resource units to new signature tenant(s).");
+                Mod.log.Debug($"Granted {startingResourcesGranted} extra starting resource units to new signature tenant(s).");
         }
 
         private long DoubleStartingResources(Entity company)

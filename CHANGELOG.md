@@ -20,6 +20,13 @@ published, so it always holds the topmost entry here and nothing else.
   being refreshed.
 - Buildings taken from the query snapshot were used without checking they still existed, although
   the loop can destroy entities as it runs.
+- **Random `NullReferenceException` dialog from the logger** ([#8]). The mod's log is now held open
+  instead of being closed and reopened on every write, and the per-update counters log at Debug
+  rather than Info. `UnityLogger.Open` swallows a failed reopen with a bare `catch` that leaves its
+  stream writer null, and `Internal_WriteStream` then dereferences it without a null check, so any
+  transient file lock surfaced as an exception dialog. Harmless to gameplay, but disruptive.
+
+[#8]: https://github.com/Meapy/signature-logistics/issues/8
 
 ### Notes
 
