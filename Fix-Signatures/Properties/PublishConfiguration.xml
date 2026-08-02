@@ -46,7 +46,7 @@ Expand Vehicles in use to see each delivery vehicle's current cargo, capacity, a
 
 SCOPE
 
-Only signature-building companies are changed. Ordinary zoned industry, service vehicles, cargo stations, and unrelated buildings keep their normal behavior.
+Every limit is scoped to the individual signature tenant it belongs to. A signature factory's vehicle and storage settings apply to that company alone and are never shared with other companies of the same type elsewhere in the city. Ordinary zoned commercial, office, and industrial companies, service vehicles, cargo stations, and unrelated buildings all keep their normal behavior.
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail-signature-logistics.png" />
@@ -57,11 +57,17 @@ Only signature-building companies are changed. Ordinary zoned industry, service 
 	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.6" />
+	<ModVersion Value="1.0.7" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Fixed repeated low-load buying. Empty outbound buying trucks now reserve their full capacity, preventing the same deficit from spawning a new request every 64 ticks. Supplemental priority restocking now uses outside connections for dependable full loads, while the game's ordinary local company purchases remain unchanged." />
+	<ChangeLog>
+Fixed settings leaking to buildings they were never meant to touch. The vehicle and storage limits were written to the shared company prefab, so every commercial, office, and industrial company of the same type in the city inherited them instead of only the signature building. Each signature tenant now gets its own private copy of that data, and no other building is affected.
+
+Existing cities need no action. The incorrect values were never saved, so they clear as soon as the game restarts.
+
+Also fixed several internal cases where the tenant list could be read while it was being modified, which could produce unstable results in large cities.
+	</ChangeLog>
 	<!--<ChangeLog>
 	</ChangeLog>-->
 	<ExternalLink Type="github" Url="https://github.com/Meapy/signature-logistics" />
