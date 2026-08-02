@@ -66,6 +66,8 @@ Fixed settings leaking to buildings they were never meant to touch. The vehicle 
 
 Existing cities need no action. The incorrect values were never saved, so they clear as soon as the game restarts.
 
+Fixed the random "NullReferenceException" error dialog some players saw during play. The mod's log file was being closed and reopened on every message, and a momentary lock on the file turned into an exception. The log is now held open and routine messages are quieter. This never affected gameplay, only the popup.
+
 Also fixed several internal cases where the tenant list could be read while it was being modified, which could produce unstable results in large cities.
 	</ChangeLog>
 	<!--<ChangeLog>

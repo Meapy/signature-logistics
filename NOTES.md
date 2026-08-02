@@ -74,6 +74,38 @@ original `PrefabBase` and cannot throw.
 reused by new entities. `ReleaseAll` is for `OnStopRunning` and `OnDestroy`, where the world is still
 the one the scopes were taken in.
 
+## Random NullReferenceException from Colossal.Logging (issue #8)
+
+**Symptom.** An error dialog appearing at random, with the exception thrown inside
+`Colossal.Logging.UnityLogger.Internal_WriteStream` and the mod frame pointing at an ordinary
+`Mod.log.Info(...)` call in `SignatureFixSystem.OnUpdate`. The reporter correctly noted there was
+nothing wrong with the values being formatted.
+
+**Cause is in the logger, not the arguments.** With `keepStreamOpen` false — the default from
+`LogManager.GetLogger` — the write path closes the file after every message:
+
+- `Colossal.Logging/UnityLogger.cs:343-346` — `Close()` after each write, nulling `m_Stream` and
+  `m_StreamWriter`.
+- `:312-315` — the next write sees `isOpen == false` and calls `Open()`.
+- `:372-386` — `Open()` wraps the `FileStream` construction in `try { } catch { Close(); }`. A bare
+  catch. A transient lock on the file (antivirus, a log tailer, cloud sync, the indexer) leaves
+  `m_StreamWriter` null and raises nothing.
+- `:318` — `Internal_WriteStream` then calls `m_StreamWriter.SetSourceAndStd(...)` with no null
+  check. The reported IL offset `0x0001f` matches this first dereference.
+- `:348` — the enclosing try catches only `IOException`, so the NRE escapes into Unity's log handler,
+  which reports it as an exception dialog.
+
+`SetShowsErrorsInUI(false)` cannot suppress it, because the exception is thrown *inside* the logging
+machinery rather than reported through the logger.
+
+**Why it looked random and why it pointed at that line.** The mod logs from `OnUpdate` on a 64-frame
+interval, and every one of those calls reopened the file. The cited line was simply the most frequent
+write in the hot path, so it drew the odds.
+
+**Fix.** `Mod.CreateLogger` sets `keepStreamOpen = true`, removing the reopen entirely, and the
+per-update counters were demoted from Info to Debug so a busy city is not writing several times a
+second in the first place.
+
 ## Pre-existing hazards fixed alongside
 
 - The renter loop iterated a live `DynamicBuffer<Renter>` while making structural changes

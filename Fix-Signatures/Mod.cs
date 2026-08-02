@@ -10,7 +10,23 @@ namespace SignatureFix
 {
     public class Mod : IMod
     {
-        public static ILog log = LogManager.GetLogger($"{nameof(SignatureFix)}.{nameof(Mod)}").SetShowsErrorsInUI(false);
+        public static ILog log = CreateLogger();
+
+        /// <summary>
+        /// Colossal.Logging closes the log file after every write when <c>keepStreamOpen</c> is false, then reopens it
+        /// on the next one. <c>UnityLogger.Open</c> swallows a failed reopen with a bare <c>catch</c> that leaves
+        /// <c>m_StreamWriter</c> null, and <c>UnityLogger.Internal_WriteStream</c> immediately dereferences it with no
+        /// null check; its surrounding try only catches <c>IOException</c>, so the resulting NullReferenceException
+        /// escapes into Unity's log handler and is shown to the player as an error dialog. Any transient lock on the
+        /// file - antivirus, a log tailer, cloud sync - is enough to trigger it, which is why it appeared at random.
+        /// Holding the stream open removes the reopen, and so the window. See GitHub issue #8.
+        /// </summary>
+        private static ILog CreateLogger()
+        {
+            ILog logger = LogManager.GetLogger($"{nameof(SignatureFix)}.{nameof(Mod)}").SetShowsErrorsInUI(false);
+            logger.keepStreamOpen = true;
+            return logger;
+        }
         internal static SignatureFixSettings Settings { get; private set; }
 
         public void OnLoad(UpdateSystem updateSystem)
