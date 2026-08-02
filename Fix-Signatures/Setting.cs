@@ -63,9 +63,9 @@ namespace SignatureFix
                 { m_Setting.GetOptionTabLocaleID(SignatureFixSettings.kSection), "Main" },
                 { m_Setting.GetOptionGroupLocaleID(SignatureFixSettings.kLimitsGroup), "Signature building limits" },
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.MaxVehicles)), "Maximum vehicles" },
-                { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.MaxVehicles)), "Maximum delivery vehicles owned by each signature building. Changes apply to existing and newly placed signature buildings." },
+                { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.MaxVehicles)), "Maximum delivery vehicles owned by each signature building. Changes apply to existing and newly placed signature buildings. Ordinary zoned commercial, office, and industrial companies are never affected." },
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.MaxStorage)), "Maximum storage (tonnes)" },
-                { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.MaxStorage)), "Maximum total storage for each signature building, in tonnes. Changes apply during gameplay." },
+                { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.MaxStorage)), "Maximum total storage for each signature building, in tonnes. Changes apply during gameplay. Ordinary zoned commercial, office, and industrial companies are never affected." },
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.RestockTarget)), "Input restock target (%)" },
                 { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.RestockTarget)), "Keep required inputs at this percentage of their recipe-weighted storage share. Lower production coverage is restocked first, using full or at least 75%-full priority imports when possible." },
             };

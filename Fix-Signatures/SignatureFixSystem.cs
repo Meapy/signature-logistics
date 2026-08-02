@@ -9,6 +9,7 @@ using Game.Pathfind;
 using Game.Prefabs;
 using Game.Simulation;
 using Game.Vehicles;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine.Scripting;
@@ -22,6 +23,8 @@ namespace SignatureFix
         private VehicleCapacitySystem m_VehicleCapacitySystem;
         private ResourceSystem m_ResourceSystem;
         private SimulationSystem m_SimulationSystem;
+        private SignaturePrefabScope m_PrefabScope;
+        private HashSet<Entity> m_LiveTenants;
 
         private const uint BankruptcyGraceFrames = 65536;
         private const int MinimumTruckFillPercent = 75;
@@ -40,8 +43,35 @@ namespace SignatureFix
             m_VehicleCapacitySystem = World.GetOrCreateSystemManaged<VehicleCapacitySystem>();
             m_ResourceSystem = World.GetOrCreateSystemManaged<ResourceSystem>();
             m_SimulationSystem = World.GetOrCreateSystemManaged<SimulationSystem>();
+            m_PrefabScope = new SignaturePrefabScope();
+            m_LiveTenants = new HashSet<Entity>();
             RequireForUpdate(m_SignatureBuildings);
             RequireForUpdate(m_EconomyParameters);
+        }
+
+        [Preserve]
+        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
+        {
+            base.OnGamePreload(purpose, mode);
+            // The world is about to be cleared and refilled. Entities recorded for the outgoing city would leave
+            // dangling indices that a new entity could reuse, so the scope is dropped and rebuilt from scratch.
+            m_PrefabScope.Forget();
+            m_LiveTenants.Clear();
+        }
+
+        [Preserve]
+        protected override void OnStopRunning()
+        {
+            m_PrefabScope.ReleaseAll(EntityManager);
+            base.OnStopRunning();
+        }
+
+        [Preserve]
+        protected override void OnDestroy()
+        {
+            if (World != null && World.IsCreated)
+                m_PrefabScope.ReleaseAll(EntityManager);
+            base.OnDestroy();
         }
 
         [Preserve]
@@ -50,8 +80,7 @@ namespace SignatureFix
             int maxVehicles = Mod.Settings?.MaxVehicles ?? SignatureFixSettings.DefaultMaxVehicles;
             int maxStorage = (Mod.Settings?.MaxStorage ?? SignatureFixSettings.DefaultMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
             int restockTarget = Mod.Settings?.RestockTarget ?? SignatureFixSettings.DefaultRestockTarget;
-            int patchedVehicleCompanies = 0;
-            int patchedStorageCompanies = 0;
+            int scopedCompanies = 0;
             int queuedPurchases = 0;
             int protectedTenants = 0;
             long startingResourcesGranted = 0;
@@ -62,10 +91,17 @@ namespace SignatureFix
             ResourcePrefabs resourcePrefabs = m_ResourceSystem.GetPrefabs();
             int bankruptcyLimit = m_EconomyParameters.GetSingleton<EconomyParameterData>().m_CompanyBankruptcyLimit;
 
+            m_LiveTenants.Clear();
+
             // ponytail: signature buildings are few; replace this scan with renter-change tracking only if profiling says it matters.
             using NativeArray<Entity> signatureBuildings = m_SignatureBuildings.ToEntityArray(Allocator.Temp);
             foreach (Entity building in signatureBuildings)
             {
+                // The query result is a snapshot and the loop below makes structural changes, so a building may
+                // already be gone by the time it is reached.
+                if (!EntityManager.Exists(building) || !EntityManager.HasBuffer<Renter>(building))
+                    continue;
+
                 int buildingMaxVehicles = maxVehicles;
                 int buildingMaxStorage = maxStorage;
                 if (EntityManager.HasComponent<SignatureBuildingLimits>(building))
@@ -75,15 +111,30 @@ namespace SignatureFix
                     buildingMaxStorage = Unity.Mathematics.math.clamp(limits.m_MaxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
                 }
 
-                DynamicBuffer<Renter> renters = EntityManager.GetBuffer<Renter>(building, true);
+                // Copy the renters out: the body makes structural changes, which invalidate a live DynamicBuffer.
+                using NativeArray<Renter> renters = EntityManager.GetBuffer<Renter>(building, true).ToNativeArray(Allocator.Temp);
                 foreach (Renter renter in renters)
                 {
                     Entity company = renter.m_Renter;
-                    if (!EntityManager.HasComponent<CompanyData>(company) ||
+                    if (!EntityManager.Exists(company) ||
+                        !EntityManager.HasComponent<CompanyData>(company) ||
                         !EntityManager.HasComponent<PrefabRef>(company))
                         continue;
 
-                    Entity companyPrefab = EntityManager.GetComponentData<PrefabRef>(company).m_Prefab;
+                    m_LiveTenants.Add(company);
+
+                    // Give this tenant a private copy of its company prefab carrying the requested limits, and read
+                    // everything below from that copy. Writing the shared prefab instead is what leaked the settings
+                    // to every commercial, office and industrial company using the same prefab.
+                    Entity companyPrefab = m_PrefabScope.Apply(EntityManager, company, buildingMaxVehicles, buildingMaxStorage, ref scopedCompanies);
+                    if (companyPrefab == Entity.Null)
+                        continue;
+
+                    // This loop makes structural changes, which invalidate cached lookups. Refresh before every use.
+                    deliveryTrucks.Update(this);
+                    resourceDatas.Update(this);
+                    layouts.Update(this);
+
                     IndustrialProcessData process = EntityManager.HasComponent<IndustrialProcessData>(companyPrefab)
                         ? EntityManager.GetComponentData<IndustrialProcessData>(companyPrefab)
                         : default;
@@ -126,35 +177,16 @@ namespace SignatureFix
                         }
                     }
 
-                    if (EntityManager.HasComponent<TransportCompanyData>(companyPrefab))
-                    {
-                        TransportCompanyData transportCompany = EntityManager.GetComponentData<TransportCompanyData>(companyPrefab);
-                        if (transportCompany.m_MaxTransports != buildingMaxVehicles)
-                        {
-                            transportCompany.m_MaxTransports = buildingMaxVehicles;
-                            EntityManager.SetComponentData(companyPrefab, transportCompany);
-                            patchedVehicleCompanies++;
-                        }
-                    }
-
-                    if (EntityManager.HasComponent<StorageLimitData>(companyPrefab))
-                    {
-                        StorageLimitData storageLimit = EntityManager.GetComponentData<StorageLimitData>(companyPrefab);
-                        if (storageLimit.m_Limit != buildingMaxStorage)
-                        {
-                            storageLimit.m_Limit = buildingMaxStorage;
-                            EntityManager.SetComponentData(companyPrefab, storageLimit);
-                            patchedStorageCompanies++;
-                        }
-                    }
-
                     if (QueueInputPurchase(company, building, companyPrefab, buildingMaxStorage, restockTarget, companyWorth, bankruptcyLimit, resourcePrefabs, truckSelectData, ref resourceDatas, ref deliveryTrucks, ref layouts))
                         queuedPurchases++;
                 }
             }
 
-            if (patchedVehicleCompanies > 0 || patchedStorageCompanies > 0)
-                Mod.log.Info($"Updated {patchedVehicleCompanies} vehicle and {patchedStorageCompanies} storage limits for signature companies.");
+            // Hand back the prefab copies of tenants that have moved out or been deleted.
+            m_PrefabScope.ReleaseUnlisted(EntityManager, m_LiveTenants);
+
+            if (scopedCompanies > 0)
+                Mod.log.Info($"Applied scoped vehicle and storage limits to {scopedCompanies} signature company prefab copies ({m_PrefabScope.ScopedCount} active).");
 
             if (queuedPurchases > 0)
                 Mod.log.Debug($"Queued {queuedPurchases} priority input purchase(s) for signature companies.");
