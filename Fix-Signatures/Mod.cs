@@ -3,6 +3,7 @@ using Colossal.Logging;
 using Game;
 using Game.Modding;
 using Game.SceneFlow;
+using Game.Serialization;
 using Game.Simulation;
 using Game.UI;
 
@@ -43,6 +44,13 @@ namespace SignatureFix
 
             updateSystem.UpdateBefore<SignatureFixSystem, ResourceBuyerSystem>(SystemUpdatePhase.GameSimulation);
             updateSystem.UpdateAt<VehicleDetailsUISystem>(SystemUpdatePhase.UIUpdate);
+
+            // Scoped prefab copies must not exist while the city is written. They carry Unity.Entities.Prefab and are
+            // therefore absent from the serialization entity table, so BinaryWriter.Write(Entity) stores -1 for any
+            // PrefabRef aimed at one and the tenant reloads with Entity.Null for its prefab. Release before the write,
+            // restore after it, both inside the Serialize phase so no simulation frame sees the vanilla limits.
+            updateSystem.UpdateBefore<PreSerialize<SignatureFixSystem>>(SystemUpdatePhase.Serialize);
+            updateSystem.UpdateAfter<SignatureScopeRestoreSystem, WriteSystem>(SystemUpdatePhase.Serialize);
         }
 
         public void OnDispose()

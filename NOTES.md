@@ -74,6 +74,133 @@ original `PrefabBase` and cannot throw.
 reused by new entities. `ReleaseAll` is for `OnStopRunning` and `OnDestroy`, where the world is still
 the one the scopes were taken in.
 
+## Signature tenants emptied their own storage on load
+
+**Symptom.** After restarting the game, already-placed signature buildings lost their stock and went
+bankrupt. Replacing the building fixed it.
+
+**Cause.** `ProcessingCompanySystem` computes how much to produce from the prefab's storage limit and
+never clamps the result at zero (`Game.Simulation/ProcessingCompanySystem.cs:220-224`):
+
+```csharp
+int x = storageLimitData.m_Limit - num8;   // limit minus storage already used
+num = math.min(x, num);
+resources2 = EconomyUtils.AddResources(output.m_Resource, num, resources);
+```
+
+A company holding more than its prefab's limit gets a negative `num` and `AddResources` **removes**
+that much output. One update is enough to strip the stock; worth then falls below the bankruptcy
+limit and the tenant leaves.
+
+Saves restore `PrefabRef` to the authored prefab, whose vanilla limit is far below the mod's, so
+every signature tenant stocked above it was over its limit the moment the city loaded. The scope was
+only re-established from `OnUpdate`, behind a 64-frame interval — which is exactly the mismatch
+window the skill warns about. Replacing the building masked it because a fresh tenant starts empty.
+
+**A second, worse effect on the same cause.** `IndustrialAISystem.cs:144` decrements
+`WorkProvider.m_MaxWorkers` whenever stored resources reach **half** the prefab limit:
+
+```csharp
+flag4 = value.m_MaxWorkers > kMinimumEmployee && resources >= storageLimitData.m_Limit / 2 && num < 0;
+```
+
+So an over-limit tenant loses employees on every AI tick as well as stock, which is why the affected
+buildings showed 0% efficiency and no income rather than merely an empty warehouse.
+
+**Fix, and the trap inside the fix.** The scoping pass runs from `OnGameLoaded` and
+`OnGameLoadingComplete` so scoped prefabs exist before the first simulation update. `OnGamePreload`
+still only calls `Forget()`, since those entities belong to the outgoing world.
+
+The first attempt still failed, because the pass keyed on the building's `Renter` buffer — and
+**`Renter` is not serialized**. `Game.Serialization/RenterSystem.cs` rebuilds it during
+deserialization from each company's `PropertyRenter`. A load-time pass keyed on `Renter` therefore
+runs before the buffers exist, finds every signature building but zero tenants, and does nothing at
+all — indistinguishable from success. The load pass now walks tenants via a `PropertyRenter` query,
+which is serialized, and resolves the building through `PropertyRenter.m_Property`.
+
+Note also that `GameSystemBase.GameLoadingComplete` catches exceptions and only writes them to the
+game log without disabling the system, so a throwing load pass is silent too. The pass now logs its
+building, tenant and scope counts at Info on every load, and reports its own failures.
+
+**The actual cause: a scoped copy cannot be referenced from a save.** This was the real defect, and it
+took three wrong fixes to find because the damage is written at *save* time while the symptom appears
+at *load* time.
+
+`PrefabRef.Serialize` writes the raw entity (`Game.Prefabs/PrefabRef.cs:12`), and entity fields go
+through `BinaryWriter.Write(Entity)`
+(`Colossal.Core/Colossal.Serialization.Entities/BinaryWriter.cs:128-141`):
+
+```csharp
+if (value.Index >= 0 && value.Index < m_EntityTable.Length) {
+    Entity entity = m_EntityTable[value.Index];
+    if (entity.Version == value.Version) { Write(entity.Index); return; }
+}
+Write(-1);
+```
+
+`m_EntityTable` covers the entities actually being serialized. A scoped copy carries
+`Unity.Entities.Prefab`, which is exactly what keeps it out of every query — including the ones that
+build that table. So a tenant saved while pointing at a copy has its `PrefabRef` written as `-1`, and
+`BinaryReader.Read(out Entity)` maps `-1` back to `Entity.Null`
+(`BinaryReader.cs:146-157`). The company reloads with no prefab at all.
+
+The earlier claim in this file that `PrefabRef` serializes via `PrefabData.m_Index` was **wrong**.
+`PrefabReferences.Check` marks which prefabs belong in the save's prefab table; it does not encode the
+field. The property that makes the copy invisible to the simulation is the same property that makes
+it unserializable, and that tension is inherent to the approach.
+
+**Fix.** `SignatureFixSystem` implements `Game.Serialization.IPreSerialize` and releases every scope
+before the write; `SignatureScopeRestoreSystem` re-applies them after `WriteSystem`. Both are
+registered in `SystemUpdatePhase.Serialize`, so the release and restore are separated by no simulation
+frame at all — a tenant is never exposed to the vanilla limit, which is what would otherwise let
+`ProcessingCompanySystem` and `IndustrialAISystem` strip it.
+
+**Cities saved by 1.0.8 cannot be repaired by the mod.** Their tenants hold `Entity.Null` for a
+prefab, and the identity needed to pick the right one died with the reference. `Apply` logs a warning
+and leaves them alone; replacing the building reseats a healthy tenant.
+
+**The copy lifecycle could also strand a company with no prefab at all.** The panel of an affected
+building is the tell: every row sourced from the *company* entity survived (Company, Income, Costs,
+Profit, Bank Balance) while every row sourced from the *prefab* vanished (Type, Requires, Produces,
+Production, Employees, Storage). That is not an over-limit company — it is a company whose
+`PrefabRef` no longer resolves.
+
+`Release` caused it. It destroyed the copy unconditionally, but only restored `PrefabRef` when the
+recorded `m_Source` still existed:
+
+```csharp
+if (... && entityManager.Exists(scoped.m_Source))
+    entityManager.SetComponentData(company, new PrefabRef { m_Prefab = scoped.m_Source });
+if (entityManager.Exists(scoped.m_Clone))
+    entityManager.DestroyEntity(scoped.m_Clone);   // ran either way
+```
+
+Prefab entities are not stable across a load: `PrefabSystem` rebuilds them and has
+`ReplacePrefabSystem` swap the old entity out (`Game.Prefabs/PrefabSystem.cs:798-805`). Once the
+recorded source had been replaced, the restore was skipped and the copy destroyed anyway, leaving
+the company pointing at a destroyed entity — no process, no workplaces, no storage limit, zero
+efficiency, and unrecoverable short of replacing the building.
+
+`Release` now removes the copy only when the company no longer references it, recovers the current
+authored prefab through `PrefabData.m_Index` when the recorded source has been replaced, and leaks
+the copy rather than stranding the company when neither is possible. A leaked copy is harmless — it
+carries `Unity.Entities.Prefab`, so no query sees it.
+
+**`OnGameLoaded` is the wrong hook.** It fires from `LoadGameSystem.onOnSaveGameLoaded`, mid-pipeline,
+before prefab references are resolved back into entities and while `PrefabSystem` may still be
+replacing prefab entities. Cloning from a `PrefabRef` read there copies an unresolved or
+soon-to-be-stale entity. Only `OnGameLoadingComplete` is used.
+
+**Ordering is not sufficient on its own.** `SignatureFixSystem` is already ordered before
+`ResourceBuyerSystem` (`Game.Common/SystemOrder.cs:394`), which puts it ahead of
+`ProcessingCompanySystem` (`:454`), `IndustrialAISystem` (`:495`) and `CompanyMoveAwaySystem`
+(`:505`) within a frame. But `GetUpdateInterval` is 64, so those systems can still run on frames
+where this one does not. Only the load hooks close the window.
+
+**Related, not yet handled.** The same arithmetic applies when the player *lowers* the storage
+slider below what a company currently holds: the next production update destroys the excess rather
+than letting it drain. Worth deciding whether to ramp reductions or warn in the UI.
+
 ## Random NullReferenceException from Colossal.Logging (issue #8)
 
 **Symptom.** An error dialog appearing at random, with the exception thrown inside
