@@ -57,18 +57,27 @@ Every limit is scoped to the individual signature tenant it belongs to. A signat
 	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.8" />
+	<ModVersion Value="1.0.9" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<ChangeLog>
-Fixed settings leaking to buildings they were never meant to touch. The vehicle and storage limits were written to the shared company prefab, so every commercial, office, and industrial company of the same type in the city inherited them instead of only the signature building. Each signature tenant now gets its own private copy of that data, and no other building is affected.
+- **Signature buildings losing their company, storage and employees on every reload.** This was a
+  defect in 1.0.8 and it corrupted the affected companies in the save.
 
-Existing cities need no action. The incorrect values were never saved, so they clear as soon as the game restarts.
+  The scoped company prefab copies introduced in 1.0.8 carry `Unity.Entities.Prefab` so the
+  simulation cannot see them — but that also keeps them out of the table
+  `BinaryWriter.Write(Entity)` remaps through, so it wrote `-1` for any tenant pointing at one
+  (`BinaryWriter.cs:128-141`). On load, `-1` becomes `Entity.Null`, leaving the company with no
+  prefab: no process, no workplaces, no storage limit, 0% efficiency.
 
-Fixed the random "NullReferenceException" error dialog some players saw during play. The mod's log file was being closed and reopened on every message, and a momentary lock on the file turned into an exception. The log is now held open and routine messages are quieter. This never affected gameplay, only the popup.
+  Scopes are now released before the city is written and re-applied immediately after, both inside
+  the serialize phase, so saves only ever contain stock prefab references and no simulation frame
+  runs with the vanilla limits.
 
-Also fixed several internal cases where the tenant list could be read while it was being modified, which could produce unstable results in large cities.
+  **Cities saved with 1.0.8 cannot be repaired automatically** — the information needed to identify
+  each tenant's prefab was lost with the reference. Affected buildings log a warning and must be
+  replaced to get a working tenant back.
 	</ChangeLog>
 	<!--<ChangeLog>
 	</ChangeLog>-->

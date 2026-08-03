@@ -48,6 +48,12 @@ namespace SignatureFix
 
         private readonly Dictionary<Entity, ScopedPrefab> m_Scoped = new Dictionary<Entity, ScopedPrefab>();
         private readonly List<Entity> m_Expired = new List<Entity>();
+        private readonly PrefabSystem m_PrefabSystem;
+
+        internal SignaturePrefabScope(PrefabSystem prefabSystem)
+        {
+            m_PrefabSystem = prefabSystem;
+        }
 
         internal int ScopedCount => m_Scoped.Count;
 
@@ -62,6 +68,16 @@ namespace SignatureFix
                 return Entity.Null;
 
             Entity current = entityManager.GetComponentData<PrefabRef>(company).m_Prefab;
+
+            // A company whose prefab reference does not resolve has already lost everything the game reads from a
+            // prefab - its process, workplaces and storage limit - and cannot be repaired from here, because the
+            // identity needed to find the right prefab lived on the entity that is gone. Report it rather than
+            // cloning from a dangling reference and compounding the damage.
+            if (current == Entity.Null || !entityManager.Exists(current))
+            {
+                Mod.log.Warn($"Company {company.Index} references a prefab that no longer exists; leaving it untouched. Replacing the building will reseat a healthy tenant.");
+                return Entity.Null;
+            }
 
             if (m_Scoped.TryGetValue(company, out ScopedPrefab scoped))
             {
@@ -84,7 +100,12 @@ namespace SignatureFix
                 current = entityManager.GetComponentData<PrefabRef>(company).m_Prefab;
             }
 
-            // `current` is now an authored prefab. Only take a copy when there is something to override on it.
+            // `current` is now an authored prefab. Only take a copy when there is something to override on it, and
+            // only when it actually looks like a registered company prefab - PrefabData is what lets the copy resolve
+            // back to the same PrefabBase for the UI, for save serialization, and for recovery in ResolveSource.
+            if (!entityManager.HasComponent<PrefabData>(current))
+                return current;
+
             if (!entityManager.HasComponent<TransportCompanyData>(current) &&
                 !entityManager.HasComponent<StorageLimitData>(current))
                 return current;
@@ -162,18 +183,55 @@ namespace SignatureFix
 
         private void Release(EntityManager entityManager, Entity company, ScopedPrefab scoped)
         {
-            // Only restore when the company still points at our copy, so a prefab the game assigned meanwhile is
-            // never clobbered.
-            if (entityManager.Exists(company) &&
+            m_Scoped.Remove(company);
+
+            bool companyStillPointsAtCopy =
+                entityManager.Exists(company) &&
                 entityManager.HasComponent<PrefabRef>(company) &&
-                entityManager.GetComponentData<PrefabRef>(company).m_Prefab == scoped.m_Clone &&
-                entityManager.Exists(scoped.m_Source))
-                entityManager.SetComponentData(company, new PrefabRef { m_Prefab = scoped.m_Source });
+                entityManager.GetComponentData<PrefabRef>(company).m_Prefab == scoped.m_Clone;
+
+            if (companyStillPointsAtCopy)
+            {
+                Entity source = ResolveSource(entityManager, scoped);
+                if (source == Entity.Null)
+                {
+                    // The authored prefab is gone and could not be re-resolved. Destroying the copy here would leave
+                    // the company pointing at a destroyed entity, which strips every prefab-derived value it has -
+                    // process, workplaces, storage limit - and leaves a building with no employees, no storage and
+                    // zero efficiency. Leak the copy instead; it carries Unity.Entities.Prefab, so nothing queries it.
+                    return;
+                }
+
+                entityManager.SetComponentData(company, new PrefabRef { m_Prefab = source });
+            }
 
             if (entityManager.Exists(scoped.m_Clone))
                 entityManager.DestroyEntity(scoped.m_Clone);
+        }
 
-            m_Scoped.Remove(company);
+        /// <summary>
+        /// Returns the authored prefab entity to hand a company back. Prefab entities are not stable across a load:
+        /// <c>PrefabSystem</c> can rebuild them and have <c>ReplacePrefabSystem</c> swap the old entity out
+        /// (Game.Prefabs/PrefabSystem.cs:798-805), which invalidates a source recorded earlier. When that has
+        /// happened the current entity is recovered through <c>PrefabData.m_Index</c>, which the copy shares with
+        /// the prefab it was taken from.
+        /// </summary>
+        private Entity ResolveSource(EntityManager entityManager, ScopedPrefab scoped)
+        {
+            if (entityManager.Exists(scoped.m_Source))
+                return scoped.m_Source;
+
+            if (m_PrefabSystem == null || !entityManager.Exists(scoped.m_Clone) ||
+                !entityManager.HasComponent<PrefabData>(scoped.m_Clone))
+                return Entity.Null;
+
+            PrefabData prefabData = entityManager.GetComponentData<PrefabData>(scoped.m_Clone);
+            if (!m_PrefabSystem.TryGetPrefab(prefabData, out PrefabBase prefabBase) || prefabBase == null)
+                return Entity.Null;
+
+            return m_PrefabSystem.TryGetEntity(prefabBase, out Entity entity) && entityManager.Exists(entity)
+                ? entity
+                : Entity.Null;
         }
 
         private static void WriteLimits(EntityManager entityManager, Entity prefab, int maxVehicles, int maxStorage)

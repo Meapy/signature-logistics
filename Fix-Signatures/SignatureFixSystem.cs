@@ -16,9 +16,10 @@ using UnityEngine.Scripting;
 
 namespace SignatureFix
 {
-    public partial class SignatureFixSystem : GameSystemBase
+    public partial class SignatureFixSystem : GameSystemBase, Game.Serialization.IPreSerialize
     {
         private EntityQuery m_SignatureBuildings;
+        private EntityQuery m_PropertyTenants;
         private EntityQuery m_EconomyParameters;
         private VehicleCapacitySystem m_VehicleCapacitySystem;
         private ResourceSystem m_ResourceSystem;
@@ -39,11 +40,21 @@ namespace SignatureFix
             m_SignatureBuildings = GetEntityQuery(
                 ComponentType.ReadOnly<Signature>(),
                 ComponentType.ReadOnly<Renter>());
+            // Renter buffers are not serialized: Game.Serialization.RenterSystem rebuilds them from each company's
+            // PropertyRenter during deserialization. A load-time pass keyed on Renter can therefore run before the
+            // buffers exist and find nothing. PropertyRenter is the serialized source of truth, so the load pass
+            // starts from tenants and resolves the building through PropertyRenter.m_Property instead.
+            m_PropertyTenants = GetEntityQuery(
+                ComponentType.ReadOnly<CompanyData>(),
+                ComponentType.ReadOnly<PropertyRenter>(),
+                ComponentType.ReadOnly<PrefabRef>(),
+                ComponentType.Exclude<Game.Common.Deleted>(),
+                ComponentType.Exclude<Game.Tools.Temp>());
             m_EconomyParameters = GetEntityQuery(ComponentType.ReadOnly<EconomyParameterData>());
             m_VehicleCapacitySystem = World.GetOrCreateSystemManaged<VehicleCapacitySystem>();
             m_ResourceSystem = World.GetOrCreateSystemManaged<ResourceSystem>();
             m_SimulationSystem = World.GetOrCreateSystemManaged<SimulationSystem>();
-            m_PrefabScope = new SignaturePrefabScope();
+            m_PrefabScope = new SignaturePrefabScope(World.GetOrCreateSystemManaged<PrefabSystem>());
             m_LiveTenants = new HashSet<Entity>();
             RequireForUpdate(m_SignatureBuildings);
             RequireForUpdate(m_EconomyParameters);
@@ -57,6 +68,132 @@ namespace SignatureFix
             // dangling indices that a new entity could reuse, so the scope is dropped and rebuilt from scratch.
             m_PrefabScope.Forget();
             m_LiveTenants.Clear();
+        }
+
+        [Preserve]
+        protected override void OnGameLoadingComplete(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
+        {
+            base.OnGameLoadingComplete(purpose, mode);
+            if (!mode.IsGame())
+                return;
+
+            // Scoped limits must exist before the first simulation update, not one update interval later.
+            //
+            // ProcessingCompanySystem derives its production amount from the prefab's storage limit
+            // (Game.Simulation/ProcessingCompanySystem.cs:220-224):
+            //
+            //     int x = storageLimitData.m_Limit - num8;   // limit minus storage already used
+            //     num = math.min(x, num);                    // never clamped at zero
+            //     EconomyUtils.AddResources(output.m_Resource, num, resources);
+            //
+            // A tenant loaded holding more than the prefab's limit therefore produces a *negative* amount and
+            // deletes its own output stock. Saves restore PrefabRef to the authored prefab with its much lower
+            // vanilla limit, so every signature tenant stocked above it was emptied - and then went bankrupt as
+            // its worth collapsed - in the window before OnUpdate first ran.
+            ApplyScopedLimits("OnGameLoadingComplete");
+        }
+
+        /// <summary>
+        /// Hands every signature tenant back to its authored company prefab immediately before the city is written.
+        ///
+        /// <para>
+        /// This is not optional bookkeeping - it is what keeps the save valid. Entity fields are written through
+        /// <c>BinaryWriter.Write(Entity)</c> (Colossal.Serialization.Entities/BinaryWriter.cs:128-141), which remaps
+        /// the entity through <c>m_EntityTable</c> - the table of entities actually being serialized - and writes
+        /// <c>-1</c> for anything absent from it. A scoped prefab copy carries <c>Unity.Entities.Prefab</c>, so it is
+        /// excluded from the queries that build that table. A tenant saved while pointing at a copy therefore has its
+        /// <c>PrefabRef</c> written as <c>-1</c>, and <c>BinaryReader.Read(out Entity)</c> turns <c>-1</c> back into
+        /// <c>Entity.Null</c> (BinaryReader.cs:146-157). The company reloads with no prefab at all: no process, no
+        /// workplaces, no storage limit, zero efficiency.
+        /// </para>
+        /// <para>
+        /// <c>SignatureScopeRestoreSystem</c> re-applies the scopes later in the same Serialize phase, after
+        /// <c>WriteSystem</c>, so no simulation frame ever runs with the vanilla limits in place.
+        /// </para>
+        /// </summary>
+        public void PreSerialize(Colossal.Serialization.Entities.Context context)
+        {
+            m_PrefabScope.ReleaseAll(EntityManager);
+            m_LiveTenants.Clear();
+        }
+
+        /// <summary>
+        /// Re-establishes the scopes released by <see cref="PreSerialize"/>. Called from
+        /// <see cref="SignatureScopeRestoreSystem"/> once the city has been written.
+        /// </summary>
+        internal void RestoreScopedLimitsAfterSerialize()
+        {
+            ApplyScopedLimits("PostSerialize");
+        }
+
+        // Deliberately no OnGameLoaded override. That hook fires from LoadGameSystem.onOnSaveGameLoaded, in the middle
+        // of the load pipeline, before prefab references have been resolved back into entities and while PrefabSystem
+        // may still rebuild and replace prefab entities. Cloning from a PrefabRef read there copies the wrong entity
+        // or an unresolved one. OnGameLoadingComplete runs after all of that has settled.
+
+        /// <summary>
+        /// Gives every current signature tenant its scoped company prefab and releases the rest. This is the part
+        /// of <see cref="OnUpdate"/> that must not wait for an update interval.
+        /// </summary>
+        private void ApplyScopedLimits(string hook)
+        {
+            int maxVehicles = Mod.Settings?.MaxVehicles ?? SignatureFixSettings.DefaultMaxVehicles;
+            int maxStorage = (Mod.Settings?.MaxStorage ?? SignatureFixSettings.DefaultMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
+            int scopedCompanies = 0;
+            int buildingCount = 0;
+            int tenantCount = 0;
+
+            try
+            {
+                m_LiveTenants.Clear();
+
+                // Walk tenants rather than buildings: PropertyRenter survives the save, the building's Renter buffer
+                // is only reconstructed later during deserialization.
+                using NativeArray<Entity> tenants = m_PropertyTenants.ToEntityArray(Allocator.Temp);
+                foreach (Entity company in tenants)
+                {
+                    if (!EntityManager.Exists(company))
+                        continue;
+
+                    Entity building = EntityManager.GetComponentData<PropertyRenter>(company).m_Property;
+                    if (building == Entity.Null ||
+                        !EntityManager.Exists(building) ||
+                        !EntityManager.HasComponent<Signature>(building))
+                        continue;
+
+                    buildingCount++;
+                    tenantCount++;
+                    ResolveBuildingLimits(building, maxVehicles, maxStorage, out int buildingMaxVehicles, out int buildingMaxStorage);
+                    m_LiveTenants.Add(company);
+                    m_PrefabScope.Apply(EntityManager, company, buildingMaxVehicles, buildingMaxStorage, ref scopedCompanies);
+                }
+
+                m_PrefabScope.ReleaseUnlisted(EntityManager, m_LiveTenants);
+            }
+            catch (System.Exception exception)
+            {
+                // GameSystemBase.GameLoadingComplete swallows exceptions from this path and only logs them to the
+                // game log, so report here too - otherwise a failed load-time pass looks identical to one that
+                // simply found nothing to do.
+                Mod.log.Error(exception, $"{hook}: scoped limit pass failed after {buildingCount} building(s), {tenantCount} tenant(s).");
+                return;
+            }
+
+            // Info rather than Debug: this runs once per load, not per update, and it is the line that shows whether
+            // signature tenants were protected before the first simulation update.
+            Mod.log.Info($"{hook}: {tenantCount} signature tenant(s) across {buildingCount} building(s), {scopedCompanies} newly scoped, {m_PrefabScope.ScopedCount} active. Limits {maxVehicles} vehicles / {maxStorage} storage units.");
+        }
+
+        private void ResolveBuildingLimits(Entity building, int globalMaxVehicles, int globalMaxStorage, out int maxVehicles, out int maxStorage)
+        {
+            maxVehicles = globalMaxVehicles;
+            maxStorage = globalMaxStorage;
+            if (!EntityManager.HasComponent<SignatureBuildingLimits>(building))
+                return;
+
+            SignatureBuildingLimits limits = EntityManager.GetComponentData<SignatureBuildingLimits>(building);
+            maxVehicles = Unity.Mathematics.math.clamp(limits.m_MaxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles);
+            maxStorage = Unity.Mathematics.math.clamp(limits.m_MaxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
         }
 
         [Preserve]
@@ -102,14 +239,7 @@ namespace SignatureFix
                 if (!EntityManager.Exists(building) || !EntityManager.HasBuffer<Renter>(building))
                     continue;
 
-                int buildingMaxVehicles = maxVehicles;
-                int buildingMaxStorage = maxStorage;
-                if (EntityManager.HasComponent<SignatureBuildingLimits>(building))
-                {
-                    SignatureBuildingLimits limits = EntityManager.GetComponentData<SignatureBuildingLimits>(building);
-                    buildingMaxVehicles = Unity.Mathematics.math.clamp(limits.m_MaxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles);
-                    buildingMaxStorage = Unity.Mathematics.math.clamp(limits.m_MaxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
-                }
+                ResolveBuildingLimits(building, maxVehicles, maxStorage, out int buildingMaxVehicles, out int buildingMaxStorage);
 
                 // Copy the renters out: the body makes structural changes, which invalidate a live DynamicBuffer.
                 using NativeArray<Renter> renters = EntityManager.GetBuffer<Renter>(building, true).ToNativeArray(Allocator.Temp);

@@ -4,7 +4,28 @@ Full history for Signature Logistics. The `ChangeLog` field in
 `Fix-Signatures/Properties/PublishConfiguration.xml` carries only the notes for the version being
 published, so it always holds the topmost entry here and nothing else.
 
-## 1.0.8 — unreleased
+## 1.0.9
+
+### Fixed
+
+- **Signature buildings losing their company, storage and employees on every reload.** This was a
+  defect in 1.0.8 and it corrupted the affected companies in the save.
+
+  The scoped company prefab copies introduced in 1.0.8 carry `Unity.Entities.Prefab` so the
+  simulation cannot see them — but that also keeps them out of the table
+  `BinaryWriter.Write(Entity)` remaps through, so it wrote `-1` for any tenant pointing at one
+  (`BinaryWriter.cs:128-141`). On load, `-1` becomes `Entity.Null`, leaving the company with no
+  prefab: no process, no workplaces, no storage limit, 0% efficiency.
+
+  Scopes are now released before the city is written and re-applied immediately after, both inside
+  the serialize phase, so saves only ever contain stock prefab references and no simulation frame
+  runs with the vanilla limits.
+
+  **Cities saved with 1.0.8 cannot be repaired automatically** — the information needed to identify
+  each tenant's prefab was lost with the reference. Affected buildings log a warning and must be
+  replaced to get a working tenant back.
+
+## 1.0.8
 
 ### Fixed
 
@@ -20,6 +41,24 @@ published, so it always holds the topmost entry here and nothing else.
   being refreshed.
 - Buildings taken from the query snapshot were used without checking they still existed, although
   the loop can destroy entities as it runs.
+- **Signature buildings losing their storage and employees on load, and becoming useless until
+  replaced.** Scoped limits are now applied from `OnGameLoaded` and `OnGameLoadingComplete`, before
+  the first simulation update, rather than up to one 64-frame update interval later.
+
+  A save restores the tenant's `PrefabRef` to the authored prefab with its much lower vanilla storage
+  limit, leaving the company over its limit the instant the city loads. Two vanilla systems then
+  punish that state: `ProcessingCompanySystem` derives production from `storageLimit - storageUsed`
+  without clamping at zero (`:220-224`), so the company produces a negative amount and deletes its
+  own output; and `IndustrialAISystem` decrements `WorkProvider.m_MaxWorkers` whenever stock reaches
+  half the limit (`:144`), so employees drain away too. The result was 0% efficiency, no income, and
+  eventual bankruptcy.
+
+  The load pass resolves tenants through `PropertyRenter`, not the building's `Renter` buffer, since
+  `Renter` is rebuilt during deserialization and does not exist yet when the pass runs.
+
+  Affected buildings recover on their own once the limits are correct — `IndustrialAISystem` raises
+  `m_MaxWorkers` again while stock is below a quarter of the limit — but stock already destroyed does
+  not come back.
 - **Random `NullReferenceException` dialog from the logger** ([#8]). The mod's log is now held open
   instead of being closed and reopened on every write, and the per-update counters log at Debug
   rather than Info. `UnityLogger.Open` swallows a failed reopen with a bare `catch` that leaves its
