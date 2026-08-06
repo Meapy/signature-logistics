@@ -3,7 +3,20 @@ import { pathToFileURL } from "node:url";
 
 const entity = { index: 42, version: 7 };
 const details = [{ entity, resource: "Chemicals", cargo: 12000, capacity: 25000, distance: 1500 }];
-const limits = { visible: true, overridden: true, maxVehicles: 20, maxStorage: 600, globalMaxVehicles: 20, globalMaxStorage: 500 };
+const limits = {
+  visible: true,
+  overridden: true,
+  maxVehicles: 20,
+  maxStorage: 600,
+  workerMultiplier: 3,
+  productionMultiplier: 4,
+  globalMaxVehicles: 20,
+  globalMaxStorage: 500,
+  globalWorkerMultiplier: 1,
+  globalProductionMultiplier: 1,
+  minMultiplier: 1,
+  maxMultiplier: 10
+};
 const departure = { visible: true, reason: "Bankruptcy: Missing materials" };
 const triggers = [];
 
@@ -98,7 +111,9 @@ const section = sectionComponents["Game.UI.InGame.VehiclesSection"]({});
 const controls = section.props.children[0];
 const vehicleSlider = controls.props.children[2].props.children;
 const storageSlider = controls.props.children[4].props.children;
-const resetRow = controls.props.children[5];
+const workerSlider = controls.props.children[6].props.children;
+const productionSlider = controls.props.children[8].props.children;
+const resetRow = controls.props.children[9];
 const resetButton = resetRow.props.right;
 
 assert.equal(controls.type, "InfoSection");
@@ -107,18 +122,44 @@ assert.equal(section.props.children[1].type, OriginalVehiclesSection);
 assert.equal(vehicleSlider.type, "Slider");
 assert.equal(vehicleSlider.props.value, 20);
 assert.equal(storageSlider.props.value, 600);
+
+assert.equal(controls.props.children[5].props.left, "Worker capacity");
+assert.equal(controls.props.children[5].props.right.props.children, "3x");
+assert.equal(workerSlider.type, "Slider");
+assert.equal(workerSlider.props.value, 3);
+assert.equal(workerSlider.props.start, 1);
+assert.equal(workerSlider.props.end, 10);
+
+assert.equal(controls.props.children[7].props.left, "Production");
+assert.equal(controls.props.children[7].props.right.props.children, "4x");
+assert.equal(productionSlider.type, "Slider");
+assert.equal(productionSlider.props.value, 4);
+assert.equal(productionSlider.props.start, 1);
+assert.equal(productionSlider.props.end, 10);
+
 assert.equal(resetRow.props.left, "Building override");
 assert.equal(resetButton.props.children, "Use global");
+
+// The header collapses the section the way VEHICLES IN USE does.
+const header = controls.props.children[0];
+assert.equal(header.props.expanded, true);
+assert.equal(typeof header.props.onToggleExpanded, "function");
+assert.equal(typeof header.props.onSelect, "function");
 const companySection = wrappedCompanySection({});
 const departureSection = companySection.props.children[1];
 assert.equal(companySection.props.children[0].type, OriginalCompanySection);
 assert.equal(departureSection.props.children.props.left, "Previous company left");
 assert.equal(departureSection.props.children.props.right, "Bankruptcy: Missing materials");
+// Each slider sends the full set, so a change to one never resets the other three.
 vehicleSlider.props.onChange(25);
 storageSlider.props.onChange(900);
+workerSlider.props.onChange(7);
+productionSlider.props.onChange(9);
 resetButton.props.onSelect();
 assert.deepEqual(triggers, [
-  ["SignatureFix", "setBuildingLimits", 25, 600],
-  ["SignatureFix", "setBuildingLimits", 25, 900],
+  ["SignatureFix", "setBuildingLimits", 25, 600, 3, 4],
+  ["SignatureFix", "setBuildingLimits", 25, 900, 3, 4],
+  ["SignatureFix", "setBuildingLimits", 25, 900, 7, 4],
+  ["SignatureFix", "setBuildingLimits", 25, 900, 7, 9],
   ["SignatureFix", "resetBuildingLimits"]
 ]);

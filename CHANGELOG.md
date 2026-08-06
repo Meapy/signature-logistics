@@ -4,6 +4,44 @@ Full history for Signature Logistics. The `ChangeLog` field in
 `Fix-Signatures/Properties/PublishConfiguration.xml` carries only the notes for the version being
 published, so it always holds the topmost entry here and nothing else.
 
+## 1.9.0 — unreleased
+
+### Added
+
+- **Worker capacity and production multipliers, 1x to 10x**, as global defaults in Options and as
+  per-building overrides in the info panel alongside the existing vehicle and storage sliders.
+  - Workers scale `IndustrialProcessData.m_MaxWorkersPerCell`, which is what
+    `CompanyUtils.GetIndustrialAndOfficeFittingWorkers` (`:42`) multiplies by lot size and level to
+    reach the employment ceiling. This raises the ceiling only — hiring is still bounded by the
+    city's labour supply and the company's profitability.
+  - Production scales all three recipe stacks together. `ProcessingCompanySystem` derives input
+    consumption as `input.m_Amount / output.m_Amount` (`:187`, `:193`), so scaling output alone would
+    make the recipe cheaper rather than faster. **A 10x factory needs 10x the materials delivered**,
+    so raise the storage and vehicle limits alongside it.
+  - The two compound: 10x workers with 10x production is roughly 100x output, because workforce
+    already feeds the production formula.
+  - Raising the ceiling alone was not enough. `IndustrialAISystem` walks `WorkProvider.m_MaxWorkers`
+    toward it one worker per update, and only while the company is fully staffed and under a quarter
+    of its storage limit (`:145`, `:171-173`), so a 10x change would have taken hundreds of updates
+    to appear. The tenant's worker count is now set straight to the scaled ceiling, and only ever
+    upward — the game still sheds staff on its own terms.
+  - Commercial signature tenants take their ceiling from `ServiceCompanyData.m_MaxWorkersPerCell`
+    (`CompanyUtils.cs:37`) rather than the process, so that field is scaled too.
+
+- **The Building logistics panel can be collapsed**, like Vehicles in use.
+
+### Fixed
+
+- The **Input restock target** row in Options showed its raw locale key instead of a label.
+
+### Changed
+
+- `SignatureBuildingLimits` has been replaced by `SignatureBuildingSettings`. The old component
+  shipped without a serialization version field, so it could not gain the two multiplier fields
+  without every existing save throwing `ComponentSerializerException: Data size mismatch`. Renaming
+  is the supported escape hatch. **Per-building overrides saved before this version are lost** and
+  those buildings fall back to the global defaults; global settings are unaffected.
+
 ## 1.0.9
 
 ### Fixed

@@ -163,9 +163,8 @@ namespace SignatureFix
 
                     buildingCount++;
                     tenantCount++;
-                    ResolveBuildingLimits(building, maxVehicles, maxStorage, out int buildingMaxVehicles, out int buildingMaxStorage);
                     m_LiveTenants.Add(company);
-                    m_PrefabScope.Apply(EntityManager, company, buildingMaxVehicles, buildingMaxStorage, ref scopedCompanies);
+                    m_PrefabScope.Apply(EntityManager, company, ResolveBuildingScope(building), ref scopedCompanies);
                 }
 
                 m_PrefabScope.ReleaseUnlisted(EntityManager, m_LiveTenants);
@@ -184,16 +183,81 @@ namespace SignatureFix
             Mod.log.Info($"{hook}: {tenantCount} signature tenant(s) across {buildingCount} building(s), {scopedCompanies} newly scoped, {m_PrefabScope.ScopedCount} active. Limits {maxVehicles} vehicles / {maxStorage} storage units.");
         }
 
-        private void ResolveBuildingLimits(Entity building, int globalMaxVehicles, int globalMaxStorage, out int maxVehicles, out int maxStorage)
+        /// <summary>
+        /// Raises a signature tenant's employment ceiling straight to what its scoped prefab now allows.
+        ///
+        /// <para>
+        /// Scaling <c>m_MaxWorkersPerCell</c> only moves the ceiling. <c>IndustrialAISystem</c> walks
+        /// <c>WorkProvider.m_MaxWorkers</c> toward that ceiling one worker per update, and only while the company is
+        /// already fully staffed and holding less than a quarter of its storage limit
+        /// (Game.Simulation/IndustrialAISystem.cs:145, :171-173). Going from 42 to 420 workers that way takes hundreds
+        /// of updates, which is why the slider looked like it did nothing while the production slider took effect
+        /// immediately.
+        /// </para>
+        /// <para>
+        /// Only ever raised, never lowered: shedding staff is the game's decision, and its own
+        /// <c>math.clamp</c> against the fitting-worker count (:175) brings the value back down by itself when the
+        /// multiplier is reduced.
+        /// </para>
+        /// </summary>
+        private void RaiseWorkerCeiling(Entity company, Entity building, Entity companyPrefab)
         {
-            maxVehicles = globalMaxVehicles;
-            maxStorage = globalMaxStorage;
-            if (!EntityManager.HasComponent<SignatureBuildingLimits>(building))
+            if (!EntityManager.HasComponent<WorkProvider>(company) ||
+                !EntityManager.HasComponent<PrefabRef>(building))
                 return;
 
-            SignatureBuildingLimits limits = EntityManager.GetComponentData<SignatureBuildingLimits>(building);
-            maxVehicles = Unity.Mathematics.math.clamp(limits.m_MaxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles);
-            maxStorage = Unity.Mathematics.math.clamp(limits.m_MaxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
+            Entity buildingPrefab = EntityManager.GetComponentData<PrefabRef>(building).m_Prefab;
+            if (!EntityManager.HasComponent<BuildingData>(buildingPrefab) ||
+                !EntityManager.HasComponent<BuildingPropertyData>(buildingPrefab))
+                return;
+
+            BuildingData buildingData = EntityManager.GetComponentData<BuildingData>(buildingPrefab);
+            BuildingPropertyData propertyData = EntityManager.GetComponentData<BuildingPropertyData>(buildingPrefab);
+            int level = EntityManager.HasComponent<SpawnableBuildingData>(buildingPrefab)
+                ? EntityManager.GetComponentData<SpawnableBuildingData>(buildingPrefab).m_Level
+                : 1;
+
+            int fittingWorkers;
+            if (EntityManager.HasComponent<ServiceCompanyData>(companyPrefab))
+                fittingWorkers = CompanyUtils.GetCommercialMaxFittingWorkers(buildingData, propertyData, level, EntityManager.GetComponentData<ServiceCompanyData>(companyPrefab));
+            else if (EntityManager.HasComponent<IndustrialProcessData>(companyPrefab))
+                fittingWorkers = CompanyUtils.GetIndustrialAndOfficeFittingWorkers(buildingData, propertyData, level, EntityManager.GetComponentData<IndustrialProcessData>(companyPrefab));
+            else
+                return;
+
+            WorkProvider workProvider = EntityManager.GetComponentData<WorkProvider>(company);
+            if (workProvider.m_MaxWorkers >= fittingWorkers)
+                return;
+
+            workProvider.m_MaxWorkers = fittingWorkers;
+            EntityManager.SetComponentData(company, workProvider);
+        }
+
+        /// <summary>
+        /// Resolves the effective limits and multipliers for one signature building: its own override when it has
+        /// one, otherwise the global defaults.
+        /// </summary>
+        internal SignaturePrefabScope.ScopeRequest ResolveBuildingScope(Entity building)
+        {
+            int maxVehicles = Mod.Settings?.MaxVehicles ?? SignatureFixSettings.DefaultMaxVehicles;
+            int maxStorage = Mod.Settings?.MaxStorage ?? SignatureFixSettings.DefaultMaxStorage;
+            int workerMultiplier = Mod.Settings?.WorkerMultiplier ?? SignatureFixSettings.DefaultWorkerMultiplier;
+            int productionMultiplier = Mod.Settings?.ProductionMultiplier ?? SignatureFixSettings.DefaultProductionMultiplier;
+
+            if (EntityManager.HasComponent<SignatureBuildingSettings>(building))
+            {
+                SignatureBuildingSettings overrides = EntityManager.GetComponentData<SignatureBuildingSettings>(building);
+                maxVehicles = overrides.m_MaxVehicles;
+                maxStorage = overrides.m_MaxStorage;
+                workerMultiplier = overrides.m_WorkerMultiplier;
+                productionMultiplier = overrides.m_ProductionMultiplier;
+            }
+
+            return new SignaturePrefabScope.ScopeRequest(
+                Unity.Mathematics.math.clamp(maxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles),
+                Unity.Mathematics.math.clamp(maxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne,
+                Unity.Mathematics.math.clamp(workerMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier),
+                Unity.Mathematics.math.clamp(productionMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier));
         }
 
         [Preserve]
@@ -214,8 +278,6 @@ namespace SignatureFix
         [Preserve]
         protected override void OnUpdate()
         {
-            int maxVehicles = Mod.Settings?.MaxVehicles ?? SignatureFixSettings.DefaultMaxVehicles;
-            int maxStorage = (Mod.Settings?.MaxStorage ?? SignatureFixSettings.DefaultMaxStorage) * SignatureFixSettings.StorageUnitsPerTonne;
             int restockTarget = Mod.Settings?.RestockTarget ?? SignatureFixSettings.DefaultRestockTarget;
             int scopedCompanies = 0;
             int queuedPurchases = 0;
@@ -239,7 +301,7 @@ namespace SignatureFix
                 if (!EntityManager.Exists(building) || !EntityManager.HasBuffer<Renter>(building))
                     continue;
 
-                ResolveBuildingLimits(building, maxVehicles, maxStorage, out int buildingMaxVehicles, out int buildingMaxStorage);
+                SignaturePrefabScope.ScopeRequest scope = ResolveBuildingScope(building);
 
                 // Copy the renters out: the body makes structural changes, which invalidate a live DynamicBuffer.
                 using NativeArray<Renter> renters = EntityManager.GetBuffer<Renter>(building, true).ToNativeArray(Allocator.Temp);
@@ -256,9 +318,11 @@ namespace SignatureFix
                     // Give this tenant a private copy of its company prefab carrying the requested limits, and read
                     // everything below from that copy. Writing the shared prefab instead is what leaked the settings
                     // to every commercial, office and industrial company using the same prefab.
-                    Entity companyPrefab = m_PrefabScope.Apply(EntityManager, company, buildingMaxVehicles, buildingMaxStorage, ref scopedCompanies);
+                    Entity companyPrefab = m_PrefabScope.Apply(EntityManager, company, scope, ref scopedCompanies);
                     if (companyPrefab == Entity.Null)
                         continue;
+
+                    RaiseWorkerCeiling(company, building, companyPrefab);
 
                     // This loop makes structural changes, which invalidate cached lookups. Refresh before every use.
                     deliveryTrucks.Update(this);
@@ -307,7 +371,7 @@ namespace SignatureFix
                         }
                     }
 
-                    if (QueueInputPurchase(company, building, companyPrefab, buildingMaxStorage, restockTarget, companyWorth, bankruptcyLimit, resourcePrefabs, truckSelectData, ref resourceDatas, ref deliveryTrucks, ref layouts))
+                    if (QueueInputPurchase(company, building, companyPrefab, scope.m_MaxStorage, restockTarget, companyWorth, bankruptcyLimit, resourcePrefabs, truckSelectData, ref resourceDatas, ref deliveryTrucks, ref layouts))
                         queuedPurchases++;
                 }
             }

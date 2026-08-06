@@ -35,7 +35,7 @@ namespace SignatureFix
             AddUpdateBinding(new RawValueBinding(BindingGroup, "vehicleDetails", WriteVehicleDetails));
             AddUpdateBinding(new RawValueBinding(BindingGroup, "buildingLimits", WriteBuildingLimits));
             AddUpdateBinding(new RawValueBinding(BindingGroup, "companyDeparture", WriteCompanyDeparture));
-            AddBinding(new TriggerBinding<int, int>(BindingGroup, "setBuildingLimits", SetBuildingLimits, ValueReaders.Create<int>(), ValueReaders.Create<int>()));
+            AddBinding(new TriggerBinding<int, int, int, int>(BindingGroup, "setBuildingLimits", SetBuildingLimits, ValueReaders.Create<int>(), ValueReaders.Create<int>(), ValueReaders.Create<int>(), ValueReaders.Create<int>()));
             AddBinding(new TriggerBinding(BindingGroup, "resetBuildingLimits", ResetBuildingLimits));
         }
 
@@ -107,15 +107,21 @@ namespace SignatureFix
             bool visible = TryGetSelectedSignatureBuilding(out Entity building);
             int globalMaxVehicles = Mod.Settings?.MaxVehicles ?? SignatureFixSettings.DefaultMaxVehicles;
             int globalMaxStorage = Mod.Settings?.MaxStorage ?? SignatureFixSettings.DefaultMaxStorage;
-            bool overridden = visible && EntityManager.HasComponent<SignatureBuildingLimits>(building);
+            int globalWorkerMultiplier = Mod.Settings?.WorkerMultiplier ?? SignatureFixSettings.DefaultWorkerMultiplier;
+            int globalProductionMultiplier = Mod.Settings?.ProductionMultiplier ?? SignatureFixSettings.DefaultProductionMultiplier;
+            bool overridden = visible && EntityManager.HasComponent<SignatureBuildingSettings>(building);
             int maxVehicles = globalMaxVehicles;
             int maxStorage = globalMaxStorage;
+            int workerMultiplier = globalWorkerMultiplier;
+            int productionMultiplier = globalProductionMultiplier;
 
             if (overridden)
             {
-                SignatureBuildingLimits limits = EntityManager.GetComponentData<SignatureBuildingLimits>(building);
+                SignatureBuildingSettings limits = EntityManager.GetComponentData<SignatureBuildingSettings>(building);
                 maxVehicles = math.clamp(limits.m_MaxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles);
                 maxStorage = math.clamp(limits.m_MaxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage);
+                workerMultiplier = math.clamp(limits.m_WorkerMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier);
+                productionMultiplier = math.clamp(limits.m_ProductionMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier);
             }
 
             writer.TypeBegin("SignatureFix.BuildingLimits");
@@ -127,10 +133,22 @@ namespace SignatureFix
             writer.Write(maxVehicles);
             writer.PropertyName("maxStorage");
             writer.Write(maxStorage);
+            writer.PropertyName("workerMultiplier");
+            writer.Write(workerMultiplier);
+            writer.PropertyName("productionMultiplier");
+            writer.Write(productionMultiplier);
             writer.PropertyName("globalMaxVehicles");
             writer.Write(globalMaxVehicles);
             writer.PropertyName("globalMaxStorage");
             writer.Write(globalMaxStorage);
+            writer.PropertyName("globalWorkerMultiplier");
+            writer.Write(globalWorkerMultiplier);
+            writer.PropertyName("globalProductionMultiplier");
+            writer.Write(globalProductionMultiplier);
+            writer.PropertyName("minMultiplier");
+            writer.Write(SignatureFixSettings.MinMultiplier);
+            writer.PropertyName("maxMultiplier");
+            writer.Write(SignatureFixSettings.MaxMultiplier);
             writer.TypeEnd();
         }
 
@@ -172,16 +190,18 @@ namespace SignatureFix
             }
         }
 
-        private void SetBuildingLimits(int maxVehicles, int maxStorage)
+        private void SetBuildingLimits(int maxVehicles, int maxStorage, int workerMultiplier, int productionMultiplier)
         {
             if (!TryGetSelectedSignatureBuilding(out Entity building))
                 return;
 
-            SignatureBuildingLimits limits = new SignatureBuildingLimits(
+            SignatureBuildingSettings limits = new SignatureBuildingSettings(
                 math.clamp(maxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles),
-                math.clamp(maxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage));
+                math.clamp(maxStorage, SignatureFixSettings.MinMaxStorage, SignatureFixSettings.MaxMaxStorage),
+                math.clamp(workerMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier),
+                math.clamp(productionMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier));
 
-            if (EntityManager.HasComponent<SignatureBuildingLimits>(building))
+            if (EntityManager.HasComponent<SignatureBuildingSettings>(building))
                 EntityManager.SetComponentData(building, limits);
             else
                 EntityManager.AddComponentData(building, limits);
@@ -194,8 +214,8 @@ namespace SignatureFix
             if (!TryGetSelectedSignatureBuilding(out Entity building))
                 return;
 
-            if (EntityManager.HasComponent<SignatureBuildingLimits>(building))
-                EntityManager.RemoveComponent<SignatureBuildingLimits>(building);
+            if (EntityManager.HasComponent<SignatureBuildingSettings>(building))
+                EntityManager.RemoveComponent<SignatureBuildingSettings>(building);
 
             m_Frame = UpdateEveryFrames;
         }

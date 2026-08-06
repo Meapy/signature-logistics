@@ -8,8 +8,14 @@ const buildingLimits$ = bindValue("SignatureFix", "buildingLimits", {
   visible: false,
   maxVehicles: 20,
   maxStorage: 500,
+  workerMultiplier: 1,
+  productionMultiplier: 1,
   globalMaxVehicles: 20,
-  globalMaxStorage: 500
+  globalMaxStorage: 500,
+  globalWorkerMultiplier: 1,
+  globalProductionMultiplier: 1,
+  minMultiplier: 1,
+  maxMultiplier: 10
 });
 const companyDeparture$ = bindValue("SignatureFix", "companyDeparture", {
   visible: false,
@@ -43,35 +49,72 @@ export default function register(moduleRegistry) {
 
   const withBuildingLimits = (OriginalVehiclesSection) => (props) => {
     const limits = useValue(buildingLimits$);
+    const minMultiplier = limits.minMultiplier ?? 1;
+    const maxMultiplier = limits.maxMultiplier ?? 10;
     const [maxVehicles, setMaxVehicles] = React.useState(limits.maxVehicles ?? 20);
     const [maxStorage, setMaxStorage] = React.useState(limits.maxStorage ?? 500);
+    const [workers, setWorkers] = React.useState(limits.workerMultiplier ?? 1);
+    const [production, setProduction] = React.useState(limits.productionMultiplier ?? 1);
     const vehiclesRef = React.useRef(maxVehicles);
     const storageRef = React.useRef(maxStorage);
+    const workersRef = React.useRef(workers);
+    const productionRef = React.useRef(production);
     const vehicleSteps = useStepTransformer(1);
     const storageSteps = useStepTransformer(10);
+    const multiplierSteps = useStepTransformer(1);
+    const [expanded, setExpanded] = React.useState(true);
+    const toggleExpanded = () => setExpanded(!expanded);
 
     React.useEffect(() => {
       vehiclesRef.current = limits.maxVehicles ?? 20;
       storageRef.current = limits.maxStorage ?? 500;
+      workersRef.current = limits.workerMultiplier ?? 1;
+      productionRef.current = limits.productionMultiplier ?? 1;
       setMaxVehicles(vehiclesRef.current);
       setMaxStorage(storageRef.current);
-    }, [limits.maxVehicles, limits.maxStorage, limits.overridden]);
+      setWorkers(workersRef.current);
+      setProduction(productionRef.current);
+    }, [limits.maxVehicles, limits.maxStorage, limits.workerMultiplier, limits.productionMultiplier, limits.overridden]);
+
+    // Every slider sends the full set, because the managed side stores all four in one component.
+    const push = () => trigger(
+      "SignatureFix",
+      "setBuildingLimits",
+      vehiclesRef.current,
+      storageRef.current,
+      workersRef.current,
+      productionRef.current
+    );
 
     const changeVehicles = (value) => {
       vehiclesRef.current = value;
       setMaxVehicles(value);
-      trigger("SignatureFix", "setBuildingLimits", value, storageRef.current);
+      push();
     };
     const changeStorage = (value) => {
       storageRef.current = value;
       setMaxStorage(value);
-      trigger("SignatureFix", "setBuildingLimits", vehiclesRef.current, value);
+      push();
+    };
+    const changeWorkers = (value) => {
+      workersRef.current = value;
+      setWorkers(value);
+      push();
+    };
+    const changeProduction = (value) => {
+      productionRef.current = value;
+      setProduction(value);
+      push();
     };
     const reset = () => {
       vehiclesRef.current = limits.globalMaxVehicles;
       storageRef.current = limits.globalMaxStorage;
-      setMaxVehicles(limits.globalMaxVehicles);
-      setMaxStorage(limits.globalMaxStorage);
+      workersRef.current = limits.globalWorkerMultiplier ?? 1;
+      productionRef.current = limits.globalProductionMultiplier ?? 1;
+      setMaxVehicles(vehiclesRef.current);
+      setMaxStorage(storageRef.current);
+      setWorkers(workersRef.current);
+      setProduction(productionRef.current);
       trigger("SignatureFix", "resetBuildingLimits");
     };
 
@@ -81,16 +124,23 @@ export default function register(moduleRegistry) {
       limits.visible && React.createElement(
         InfoSection,
         { className: styles.buildingLimits },
+        // The header collapses the section the way VEHICLES IN USE does. InfoRow drives its own chevron from
+        // `expanded`; `onToggleExpanded` is the prop the vanilla expandable rows use, and `onSelect` is passed as
+        // well so the whole row stays clickable. The children below are gated on our own state regardless, so the
+        // section still collapses even if only one of those handlers is wired up by the game's component.
         React.createElement(
           InfoRow,
           {
             uppercase: true,
             disableFocus: true,
+            expanded: expanded,
+            onToggleExpanded: toggleExpanded,
+            onSelect: toggleExpanded,
             left: "BUILDING LOGISTICS",
             right: React.createElement("span", { className: limits.overridden ? styles.custom : styles.global }, limits.overridden ? "CUSTOM" : "GLOBAL")
           }
         ),
-        React.createElement(
+        expanded && React.createElement(
           InfoRow,
           {
             disableFocus: true,
@@ -98,7 +148,7 @@ export default function register(moduleRegistry) {
             right: React.createElement("span", { className: styles.limitValue }, maxVehicles)
           }
         ),
-        React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
+        expanded && React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
             value: maxVehicles,
             start: 1,
             end: 100,
@@ -106,7 +156,7 @@ export default function register(moduleRegistry) {
             onChange: changeVehicles
           })
         ),
-        React.createElement(
+        expanded && React.createElement(
           InfoRow,
           {
             disableFocus: true,
@@ -114,7 +164,7 @@ export default function register(moduleRegistry) {
             right: React.createElement(LocalizedNumber, { className: styles.limitValue, value: maxStorage * 1000, unit: Unit.Weight })
           }
         ),
-        React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
+        expanded && React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
             value: maxStorage,
             start: 10,
             end: 5000,
@@ -122,7 +172,39 @@ export default function register(moduleRegistry) {
             onChange: changeStorage
           })
         ),
-        limits.overridden && React.createElement(
+        expanded && React.createElement(
+          InfoRow,
+          {
+            disableFocus: true,
+            left: "Worker capacity",
+            right: React.createElement("span", { className: styles.limitValue }, workers + "x")
+          }
+        ),
+        expanded && React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
+            value: workers,
+            start: minMultiplier,
+            end: maxMultiplier,
+            valueTransformer: multiplierSteps,
+            onChange: changeWorkers
+          })
+        ),
+        expanded && React.createElement(
+          InfoRow,
+          {
+            disableFocus: true,
+            left: "Production",
+            right: React.createElement("span", { className: styles.limitValue }, production + "x")
+          }
+        ),
+        expanded && React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
+            value: production,
+            start: minMultiplier,
+            end: maxMultiplier,
+            valueTransformer: multiplierSteps,
+            onChange: changeProduction
+          })
+        ),
+        expanded && limits.overridden && React.createElement(
           InfoRow,
           {
             disableFocus: true,
