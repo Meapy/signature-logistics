@@ -15,10 +15,16 @@ Open **Options > Signature Logistics** and configure:
 - **Maximum vehicles**: 1-100, default 20.
 - **Maximum storage (tonnes)**: 10-5,000 t, default 500 t.
 - **Input restock target**: 25-100%, default 25%.
+- **Worker capacity multiplier**: 1x-10x, default 1x.
+- **Production multiplier**: 1x-10x, default 1x.
+
+The worker multiplier raises how many people a signature building can employ. It moves the ceiling only — the game still hires against your city's labour pool and education levels, and a company the AI considers unprofitable will shed staff regardless.
+
+The production multiplier scales throughput, not efficiency: inputs scale with output, so a 10x refinery produces 10x plastics and consumes 10x petrochemicals and chemicals. Raise the storage and vehicle limits alongside it, or the building will simply starve. The two multipliers compound, because workforce already feeds the production formula — 10x workers with 10x production is roughly 100x output.
 
 Changes save automatically, load on the next game start, and act as the defaults for existing signature buildings and buildings placed later.
 
-To customize one building, select a signature factory. The **Building logistics** controls appear immediately above **Vehicles in use** and save a vehicle and storage override on that building in the current city. **Use global** removes the override and returns that building to the Options values.
+To customize one building, select a signature factory. The **Building logistics** controls appear immediately above **Vehicles in use** and save the vehicle, storage, worker and production settings as an override on that building in the current city. The section collapses from its header, the same way **Vehicles in use** does. **Use global** removes the override and returns that building to the Options values.
 
 When a required production input plus deliveries already on the way falls below the restock target, the mod asks the game's normal purchase system for another truckload. Inputs are compared by recipe-weighted production coverage rather than raw tonnes, so the material that will stop production first is restocked first. Empty outbound buying trucks reserve their full capacity until they load, preventing the mod from repeatedly ordering against the same apparent deficit. Priority restocking uses outside connections for dependable stock, requests one full largest-compatible truck, and only falls back as far as 75% when storage headroom or the bankruptcy cushion requires it; requests below that threshold wait instead of intentionally sending a nearly empty vehicle. The game still uses normal import costs, vehicles, pathfinding, and working road routes. The game's own ordinary company purchases remain unchanged and can still buy locally.
 
@@ -87,7 +93,7 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 ## Publish to Paradox Mods
 
-The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.0.8`, links to the public support forum, and has no mod or DLC dependencies.
+The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.10.0`, links to the public support forum, and has no mod or DLC dependencies.
 
 See `PUBLISHING.md` for the full procedure and checks. In short: build a clean Release, verify the deploy folder, then call the official publisher directly on that exact folder.
 

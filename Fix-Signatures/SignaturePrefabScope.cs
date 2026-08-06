@@ -44,6 +44,49 @@ namespace SignatureFix
             public Entity m_Clone;
             public int m_MaxVehicles;
             public int m_MaxStorage;
+            public int m_WorkerMultiplier;
+            public int m_ProductionMultiplier;
+
+            /// <summary>
+            /// The authored process, captured when the copy was taken. Multipliers are always applied as
+            /// <c>base x factor</c> against this rather than read back off the copy, so re-applying cannot ratchet
+            /// the values upward.
+            /// </summary>
+            public bool m_HasProcess;
+            public IndustrialProcessData m_BaseProcess;
+
+            /// <summary>
+            /// Commercial tenants take their worker ceiling from <c>ServiceCompanyData.m_MaxWorkersPerCell</c>
+            /// (<c>CompanyUtils.GetCommercialMaxFittingWorkers</c>) rather than from the process, so it has to be
+            /// scaled too or the worker slider does nothing for them.
+            /// </summary>
+            public bool m_HasService;
+            public ServiceCompanyData m_BaseService;
+        }
+
+        /// <summary>The limits and multipliers to give one signature tenant.</summary>
+        internal readonly struct ScopeRequest
+        {
+            public readonly int m_MaxVehicles;
+            public readonly int m_MaxStorage;
+            public readonly int m_WorkerMultiplier;
+            public readonly int m_ProductionMultiplier;
+
+            public ScopeRequest(int maxVehicles, int maxStorage, int workerMultiplier, int productionMultiplier)
+            {
+                m_MaxVehicles = maxVehicles;
+                m_MaxStorage = maxStorage;
+                m_WorkerMultiplier = workerMultiplier;
+                m_ProductionMultiplier = productionMultiplier;
+            }
+
+            public bool Matches(ScopedPrefab scoped)
+            {
+                return scoped.m_MaxVehicles == m_MaxVehicles &&
+                    scoped.m_MaxStorage == m_MaxStorage &&
+                    scoped.m_WorkerMultiplier == m_WorkerMultiplier &&
+                    scoped.m_ProductionMultiplier == m_ProductionMultiplier;
+            }
         }
 
         private readonly Dictionary<Entity, ScopedPrefab> m_Scoped = new Dictionary<Entity, ScopedPrefab>();
@@ -62,7 +105,7 @@ namespace SignatureFix
         /// values, and returns the prefab entity the caller should treat as this company's prefab. Returns the
         /// authored prefab unchanged when it carries neither limit component, so nothing is cloned needlessly.
         /// </summary>
-        internal Entity Apply(EntityManager entityManager, Entity company, int maxVehicles, int maxStorage, ref int scopedCompanies)
+        internal Entity Apply(EntityManager entityManager, Entity company, ScopeRequest request, ref int scopedCompanies)
         {
             if (!entityManager.HasComponent<PrefabRef>(company))
                 return Entity.Null;
@@ -83,11 +126,13 @@ namespace SignatureFix
             {
                 if (current == scoped.m_Clone && entityManager.Exists(scoped.m_Clone))
                 {
-                    if (scoped.m_MaxVehicles != maxVehicles || scoped.m_MaxStorage != maxStorage)
+                    if (!request.Matches(scoped))
                     {
-                        WriteLimits(entityManager, scoped.m_Clone, maxVehicles, maxStorage);
-                        scoped.m_MaxVehicles = maxVehicles;
-                        scoped.m_MaxStorage = maxStorage;
+                        scoped.m_MaxVehicles = request.m_MaxVehicles;
+                        scoped.m_MaxStorage = request.m_MaxStorage;
+                        scoped.m_WorkerMultiplier = request.m_WorkerMultiplier;
+                        scoped.m_ProductionMultiplier = request.m_ProductionMultiplier;
+                        WriteScopedValues(entityManager, scoped);
                         m_Scoped[company] = scoped;
                         scopedCompanies++;
                     }
@@ -106,8 +151,11 @@ namespace SignatureFix
             if (!entityManager.HasComponent<PrefabData>(current))
                 return current;
 
+            bool hasProcess = entityManager.HasComponent<IndustrialProcessData>(current);
+            bool hasService = entityManager.HasComponent<ServiceCompanyData>(current);
             if (!entityManager.HasComponent<TransportCompanyData>(current) &&
-                !entityManager.HasComponent<StorageLimitData>(current))
+                !entityManager.HasComponent<StorageLimitData>(current) &&
+                !hasProcess && !hasService)
                 return current;
 
             Entity clone = entityManager.Instantiate(current);
@@ -119,15 +167,24 @@ namespace SignatureFix
             if (entityManager.HasComponent<Updated>(clone))
                 entityManager.RemoveComponent<Updated>(clone);
 
-            WriteLimits(entityManager, clone, maxVehicles, maxStorage);
-            entityManager.SetComponentData(company, new PrefabRef { m_Prefab = clone });
-            m_Scoped[company] = new ScopedPrefab
+            ScopedPrefab created = new ScopedPrefab
             {
                 m_Source = current,
                 m_Clone = clone,
-                m_MaxVehicles = maxVehicles,
-                m_MaxStorage = maxStorage
+                m_MaxVehicles = request.m_MaxVehicles,
+                m_MaxStorage = request.m_MaxStorage,
+                m_WorkerMultiplier = request.m_WorkerMultiplier,
+                m_ProductionMultiplier = request.m_ProductionMultiplier,
+                m_HasProcess = hasProcess,
+                // Captured from the authored prefab before anything is scaled, so every later write is base x factor.
+                m_BaseProcess = hasProcess ? entityManager.GetComponentData<IndustrialProcessData>(current) : default,
+                m_HasService = hasService,
+                m_BaseService = hasService ? entityManager.GetComponentData<ServiceCompanyData>(current) : default
             };
+
+            WriteScopedValues(entityManager, created);
+            entityManager.SetComponentData(company, new PrefabRef { m_Prefab = clone });
+            m_Scoped[company] = created;
             scopedCompanies++;
             return clone;
         }
@@ -234,14 +291,21 @@ namespace SignatureFix
                 : Entity.Null;
         }
 
-        private static void WriteLimits(EntityManager entityManager, Entity prefab, int maxVehicles, int maxStorage)
+        /// <summary>
+        /// Writes the scoped limits and multipliers onto the copy. Every multiplied value is derived from
+        /// <see cref="ScopedPrefab.m_BaseProcess"/> rather than read back off the copy, so calling this repeatedly is
+        /// idempotent and lowering a slider returns the value to its authored figure instead of compounding.
+        /// </summary>
+        private static void WriteScopedValues(EntityManager entityManager, ScopedPrefab scoped)
         {
+            Entity prefab = scoped.m_Clone;
+
             if (entityManager.HasComponent<TransportCompanyData>(prefab))
             {
                 TransportCompanyData transportCompany = entityManager.GetComponentData<TransportCompanyData>(prefab);
-                if (transportCompany.m_MaxTransports != maxVehicles)
+                if (transportCompany.m_MaxTransports != scoped.m_MaxVehicles)
                 {
-                    transportCompany.m_MaxTransports = maxVehicles;
+                    transportCompany.m_MaxTransports = scoped.m_MaxVehicles;
                     entityManager.SetComponentData(prefab, transportCompany);
                 }
             }
@@ -249,12 +313,76 @@ namespace SignatureFix
             if (entityManager.HasComponent<StorageLimitData>(prefab))
             {
                 StorageLimitData storageLimit = entityManager.GetComponentData<StorageLimitData>(prefab);
-                if (storageLimit.m_Limit != maxStorage)
+                if (storageLimit.m_Limit != scoped.m_MaxStorage)
                 {
-                    storageLimit.m_Limit = maxStorage;
+                    storageLimit.m_Limit = scoped.m_MaxStorage;
                     entityManager.SetComponentData(prefab, storageLimit);
                 }
             }
+
+            if (scoped.m_HasService && entityManager.HasComponent<ServiceCompanyData>(prefab))
+            {
+                ServiceCompanyData scaledService = scoped.m_BaseService;
+                scaledService.m_MaxWorkersPerCell = scoped.m_BaseService.m_MaxWorkersPerCell *
+                    Unity.Mathematics.math.clamp(scoped.m_WorkerMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier);
+
+                ServiceCompanyData currentService = entityManager.GetComponentData<ServiceCompanyData>(prefab);
+                if (currentService.m_MaxWorkersPerCell != scaledService.m_MaxWorkersPerCell)
+                    entityManager.SetComponentData(prefab, scaledService);
+            }
+
+            if (!scoped.m_HasProcess || !entityManager.HasComponent<IndustrialProcessData>(prefab))
+                return;
+
+            IndustrialProcessData scaled = ScaleProcess(scoped.m_BaseProcess, scoped.m_WorkerMultiplier, scoped.m_ProductionMultiplier);
+            IndustrialProcessData currentProcess = entityManager.GetComponentData<IndustrialProcessData>(prefab);
+            if (!ProcessEquals(currentProcess, scaled))
+                entityManager.SetComponentData(prefab, scaled);
+        }
+
+        /// <summary>
+        /// Applies the worker and production multipliers to an authored process.
+        ///
+        /// <para>
+        /// Workers scale through <c>m_MaxWorkersPerCell</c>, which is what
+        /// <c>CompanyUtils.GetIndustrialAndOfficeFittingWorkers</c> (Game.Simulation/CompanyUtils.cs:42) multiplies by
+        /// lot size and level to get the employment ceiling. This raises the ceiling only - the AI still hires against
+        /// the city's labour supply and the company's profitability.
+        /// </para>
+        /// <para>
+        /// Production scales all three resource amounts together. <c>ProcessingCompanySystem</c> derives input
+        /// consumption as <c>input.m_Amount / output.m_Amount</c> (:187, :193), so scaling output alone would make the
+        /// recipe cheaper rather than faster. Scaling every stack keeps the ratio identical and multiplies throughput,
+        /// which means a 10x factory genuinely needs 10x the materials delivered.
+        /// </para>
+        /// </summary>
+        internal static IndustrialProcessData ScaleProcess(IndustrialProcessData authored, int workerMultiplier, int productionMultiplier)
+        {
+            int workers = Unity.Mathematics.math.clamp(workerMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier);
+            int production = Unity.Mathematics.math.clamp(productionMultiplier, SignatureFixSettings.MinMultiplier, SignatureFixSettings.MaxMultiplier);
+
+            IndustrialProcessData scaled = authored;
+            scaled.m_MaxWorkersPerCell = authored.m_MaxWorkersPerCell * workers;
+            scaled.m_Input1.m_Amount = ScaleAmount(authored.m_Input1.m_Amount, production);
+            scaled.m_Input2.m_Amount = ScaleAmount(authored.m_Input2.m_Amount, production);
+            scaled.m_Output.m_Amount = ScaleAmount(authored.m_Output.m_Amount, production);
+            return scaled;
+        }
+
+        private static int ScaleAmount(int authoredAmount, int multiplier)
+        {
+            if (authoredAmount <= 0)
+                return authoredAmount;
+
+            return (int)Unity.Mathematics.math.min((long)authoredAmount * multiplier, int.MaxValue);
+        }
+
+        private static bool ProcessEquals(IndustrialProcessData a, IndustrialProcessData b)
+        {
+            return a.m_MaxWorkersPerCell == b.m_MaxWorkersPerCell &&
+                a.m_Input1.m_Amount == b.m_Input1.m_Amount &&
+                a.m_Input2.m_Amount == b.m_Input2.m_Amount &&
+                a.m_Output.m_Amount == b.m_Output.m_Amount;
         }
     }
 }

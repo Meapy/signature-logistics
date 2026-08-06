@@ -201,6 +201,35 @@ where this one does not. Only the load hooks close the window.
 slider below what a company currently holds: the next production update destroys the excess rather
 than letting it drain. Worth deciding whether to ramp reductions or warn in the UI.
 
+## Raising the worker ceiling is not the same as raising the workers
+
+The worker multiplier scales `IndustrialProcessData.m_MaxWorkersPerCell`, which
+`CompanyUtils.GetIndustrialAndOfficeFittingWorkers` (`Game.Simulation/CompanyUtils.cs:42`) turns into
+the employment ceiling. That part worked immediately — and looked completely broken, because the
+ceiling is not what staffs the building.
+
+`IndustrialAISystem` walks `WorkProvider.m_MaxWorkers` toward the ceiling **one worker per update**,
+and only when the company is already fully staffed and holding less than a quarter of its storage
+limit (`:145`, `:171-173`):
+
+```csharp
+flag5 = length == value.m_MaxWorkers && industrialAndOfficeFittingWorkers - value.m_MaxWorkers > 1
+        && resources <= storageLimitData.m_Limit / 4;
+else if (flag5) value.m_MaxWorkers++;
+value.m_MaxWorkers = math.clamp(value.m_MaxWorkers, kMinimumEmployee, industrialAndOfficeFittingWorkers);
+```
+
+42 to 420 workers is several hundred qualifying updates. The production multiplier appeared to work
+instantly by comparison only because the recipe is re-read every tick.
+
+`SignatureFixSystem.RaiseWorkerCeiling` therefore sets `m_MaxWorkers` directly to the scaled fitting
+count. It only ever raises: shedding staff is the game's decision, and the `math.clamp` on the last
+line brings the value back down on its own when the multiplier is lowered.
+
+**Commercial tenants use a different field.** `GetCommercialMaxFittingWorkers` (`:37`) reads
+`ServiceCompanyData.m_MaxWorkersPerCell`, not the process, so scaling only `IndustrialProcessData`
+left commercial signature buildings completely unaffected by the worker slider. Both are scaled now.
+
 ## Random NullReferenceException from Colossal.Logging (issue #8)
 
 **Symptom.** An error dialog appearing at random, with the exception thrown inside

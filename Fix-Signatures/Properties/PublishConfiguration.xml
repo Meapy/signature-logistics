@@ -15,8 +15,16 @@ WHAT YOU CAN CONTROL
 - Maximum delivery vehicles: 1-100, default 20.
 - Storage capacity: 10-5,000 tonnes, default 500 tonnes.
 - Input restock target: 25-100%, default 25%.
-- Separate vehicle and storage limits for each signature factory.
+- Worker capacity multiplier: 1x-10x, default 1x.
+- Production multiplier: 1x-10x, default 1x.
+- Separate limits and multipliers for each signature factory.
 - One-click reset from a building override back to your global defaults.
+
+WORKERS AND PRODUCTION
+
+The worker multiplier raises how many people a signature building can employ. It moves the ceiling only, so the game still hires against your city's labour pool and education levels.
+
+The production multiplier scales throughput rather than efficiency. Inputs scale with output, so a 10x refinery makes 10x plastics and consumes 10x petrochemicals and chemicals. Raise the storage and vehicle limits alongside it or the building will starve. The two multipliers compound, because more workers already means more output: 10x workers with 10x production is roughly 100x.
 
 Open Options &gt; Signature Logistics to set the defaults used by every signature factory. To customize one building, select it and use the Building logistics controls shown immediately above Vehicles in use. Your global settings save across game restarts, while building overrides save with the city.
 
@@ -57,27 +65,26 @@ Every limit is scoped to the individual signature tenant it belongs to. A signat
 	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.9" />
+	<ModVersion Value="1.10.0" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<ChangeLog>
-- **Signature buildings losing their company, storage and employees on every reload.** This was a
-  defect in 1.0.8 and it corrupted the affected companies in the save.
+WORKERS AND PRODUCTION MULTIPLIERS
 
-  The scoped company prefab copies introduced in 1.0.8 carry `Unity.Entities.Prefab` so the
-  simulation cannot see them — but that also keeps them out of the table
-  `BinaryWriter.Write(Entity)` remaps through, so it wrote `-1` for any tenant pointing at one
-  (`BinaryWriter.cs:128-141`). On load, `-1` becomes `Entity.Null`, leaving the company with no
-  prefab: no process, no workplaces, no storage limit, 0% efficiency.
+Two new sliders, 1x to 10x, as global defaults in Options and per building in the info panel next to the existing vehicle and storage controls.
 
-  Scopes are now released before the city is written and re-applied immediately after, both inside
-  the serialize phase, so saves only ever contain stock prefab references and no simulation frame
-  runs with the vanilla limits.
+Worker capacity raises how many people a signature building can employ. It moves the ceiling only, so hiring still depends on your city's labour pool and education levels, and an unprofitable company will still shed staff.
 
-  **Cities saved with 1.0.8 cannot be repaired automatically** — the information needed to identify
-  each tenant's prefab was lost with the reference. Affected buildings log a warning and must be
-  replaced to get a working tenant back.
+Production scales throughput rather than efficiency. Inputs scale with output, so a 10x refinery makes 10x plastics and consumes 10x petrochemicals and chemicals. Raise the storage and vehicle limits alongside it or the building will simply starve.
+
+The two multipliers compound, because more workers already means more output. 10x workers with 10x production is roughly 100x.
+
+The Building logistics panel can now be collapsed, the same way Vehicles in use does.
+
+Also fixed: the Input restock target row in Options showed a raw text key instead of its label.
+
+Note: per-building overrides saved with earlier versions are reset to your global defaults. The stored setting had to be rebuilt to hold the new values, and old entries can no longer be read. Your global settings in Options are unaffected.
 	</ChangeLog>
 	<!--<ChangeLog>
 	</ChangeLog>-->
