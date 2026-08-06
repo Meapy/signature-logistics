@@ -93,7 +93,7 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 ## Publish to Paradox Mods
 
-The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.9.0`, links to the public support forum, and has no mod or DLC dependencies.
+The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.10.0`, links to the public support forum, and has no mod or DLC dependencies.
 
 See `PUBLISHING.md` for the full procedure and checks. In short: build a clean Release, verify the deploy folder, then call the official publisher directly on that exact folder.
 

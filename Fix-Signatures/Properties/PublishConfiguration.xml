@@ -65,7 +65,7 @@ Every limit is scoped to the individual signature tenant it belongs to. A signat
 	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.9.0" />
+	<ModVersion Value="1.10.0" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.0*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->

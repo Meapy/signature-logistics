@@ -4,7 +4,7 @@ Full history for Signature Logistics. The `ChangeLog` field in
 `Fix-Signatures/Properties/PublishConfiguration.xml` carries only the notes for the version being
 published, so it always holds the topmost entry here and nothing else.
 
-## 1.9.0 — unreleased
+## 1.10.0 — unreleased
 
 ### Added
 
@@ -36,11 +36,12 @@ published, so it always holds the topmost entry here and nothing else.
 
 ### Changed
 
-- `SignatureBuildingLimits` has been replaced by `SignatureBuildingSettings`. The old component
-  shipped without a serialization version field, so it could not gain the two multiplier fields
-  without every existing save throwing `ComponentSerializerException: Data size mismatch`. Renaming
-  is the supported escape hatch. **Per-building overrides saved before this version are lost** and
-  those buildings fall back to the global defaults; global settings are unaffected.
+- Per-building overrides now live in `SignatureBuildingSettings`, which writes a serialization
+  version field, instead of `SignatureBuildingLimits`, which shipped without one and so could not
+  gain the two multiplier fields without every existing save throwing
+  `ComponentSerializerException: Data size mismatch`. The old component is no longer read.
+  **Per-building overrides saved before this version are ignored** and those buildings fall back to
+  the global defaults; global settings are unaffected.
 
 ## 1.0.9
 
