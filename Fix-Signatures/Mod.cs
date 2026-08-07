@@ -6,6 +6,7 @@ using Game.SceneFlow;
 using Game.Serialization;
 using Game.Simulation;
 using Game.UI;
+using Unity.Entities;
 
 namespace SignatureFix
 {
@@ -30,9 +31,87 @@ namespace SignatureFix
         }
         internal static SignatureFixSettings Settings { get; private set; }
 
+        /// <summary>
+        /// True when rcav8tr's Change Company mod is present. That mod has a Company Workplaces feature which owns
+        /// <c>WorkProvider.m_MaxWorkers</c> outright, including on signature buildings, and documents that an override
+        /// "prevents this normal game logic". Two mods writing the same field cannot both win, so this one stands
+        /// down: the worker multiplier is forced to 1x and its sliders are hidden, leaving workplaces entirely to the
+        /// mod built for it. Storage, vehicles and the production multiplier are unaffected - those live on this mod's
+        /// private prefab copy, which nothing else touches.
+        /// </summary>
+        internal static bool ChangeCompanyDetected { get; private set; }
+
+        /// <summary>
+        /// Change Company's <c>WorkplacesOverride</c> component, resolved by name at load, or null when that mod is
+        /// absent. A company carrying it is one the player has explicitly given a workplaces override, and
+        /// <c>CompanyWorkplacesSystem.OverrideWorkplacesJob</c> forces <c>m_MaxWorkers</c> back to that value right
+        /// after each company AI system runs. Its query requires the component, so companies without an override are
+        /// never touched by that mod - which is why this mod only needs to stand aside per company, not globally.
+        /// </summary>
+        internal static ComponentType? WorkplacesOverrideType { get; private set; }
+
+        private static void ResolveWorkplacesOverrideType()
+        {
+            WorkplacesOverrideType = null;
+            try
+            {
+                foreach (System.Reflection.Assembly assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    System.Type type = assembly.GetType("ChangeCompany.WorkplacesOverride", false);
+                    if (type == null)
+                        continue;
+
+                    WorkplacesOverrideType = ComponentType.ReadOnly(type);
+                    log.Info("Resolved ChangeCompany.WorkplacesOverride; companies with a workplaces override will be left to that mod.");
+                    return;
+                }
+            }
+            catch (System.Exception exception)
+            {
+                log.Warn(exception, "Could not resolve ChangeCompany.WorkplacesOverride; per-company deferral is unavailable.");
+            }
+        }
+
+        /// <summary>
+        /// True when workplaces should be left entirely to Change Company: it is installed and the player has not
+        /// turned the option off. Everything that reads the worker multiplier goes through this, so the choice takes
+        /// effect the moment it is toggled - no reload needed.
+        /// </summary>
+        internal static bool DeferWorkersToChangeCompany =>
+            ChangeCompanyDetected && (Settings?.UseChangeCompanyForEmployees ?? SignatureFixSettings.DefaultUseChangeCompanyForEmployees);
+
+        private static void DetectChangeCompany()
+        {
+            ChangeCompanyDetected = false;
+            try
+            {
+                foreach (Game.Modding.ModManager.ModInfo modInfo in GameManager.instance.modManager)
+                {
+                    string name = modInfo?.name;
+                    if (string.IsNullOrEmpty(name))
+                        continue;
+
+                    if (name.IndexOf("ChangeCompany", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        name.IndexOf("Change Company", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        ChangeCompanyDetected = true;
+                        log.Info($"Change Company detected ({name}). Worker capacity control is disabled; its Company Workplaces feature manages workplaces instead.");
+                        return;
+                    }
+                }
+            }
+            catch (System.Exception exception)
+            {
+                // Detection is a courtesy, not a requirement. If the mod list cannot be read, carry on as if absent.
+                log.Warn(exception, "Could not inspect the mod list to detect Change Company.");
+            }
+        }
+
         public void OnLoad(UpdateSystem updateSystem)
         {
             log.Info(nameof(OnLoad));
+            DetectChangeCompany();
+            ResolveWorkplacesOverrideType();
 
             if (GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset))
                 log.Info($"Current mod asset at {asset.path}");

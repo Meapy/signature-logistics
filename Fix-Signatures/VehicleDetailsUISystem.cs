@@ -145,6 +145,8 @@ namespace SignatureFix
             writer.Write(globalWorkerMultiplier);
             writer.PropertyName("globalProductionMultiplier");
             writer.Write(globalProductionMultiplier);
+            writer.PropertyName("workersAvailable");
+            writer.Write(!Mod.DeferWorkersToChangeCompany);
             writer.PropertyName("minMultiplier");
             writer.Write(SignatureFixSettings.MinMultiplier);
             writer.PropertyName("maxMultiplier");

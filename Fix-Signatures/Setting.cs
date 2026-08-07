@@ -19,6 +19,13 @@ namespace SignatureFix
         public const int DefaultRestockTarget = 25;
         public const int DefaultWorkerMultiplier = 1;
         public const int DefaultProductionMultiplier = 1;
+        /// <summary>
+        /// Off by default. Deferral is already precise per company - a company carrying Change Company's
+        /// WorkplacesOverride is left to that mod - so there is no blanket conflict to avoid, and defaulting this on
+        /// would disable the worker multiplier for no reason. It remains available for anyone who would rather this
+        /// mod never considered workplaces at all.
+        /// </summary>
+        public const bool DefaultUseChangeCompanyForEmployees = false;
         internal const int MinMaxVehicles = 1;
         internal const int MaxMaxVehicles = 100;
         internal const int MinMaxStorage = 10;
@@ -43,9 +50,27 @@ namespace SignatureFix
         [SettingsUISection(kSection, kLimitsGroup)]
         public int RestockTarget { get; set; } = DefaultRestockTarget;
 
+        /// <summary>
+        /// Only shown when Change Company is installed, because it is meaningless otherwise. On by default, so a
+        /// player who installs that mod does not have to know about this conflict to avoid it.
+        /// </summary>
+        [SettingsUISection(kSection, kOutputGroup)]
+        [SettingsUIHideByCondition(typeof(SignatureFixSettings), nameof(IsChangeCompanyAbsent))]
+        public bool UseChangeCompanyForEmployees { get; set; } = DefaultUseChangeCompanyForEmployees;
+
         [SettingsUISlider(min = MinMultiplier, max = MaxMultiplier, step = 1)]
         [SettingsUISection(kSection, kOutputGroup)]
+        [SettingsUIHideByCondition(typeof(SignatureFixSettings), nameof(IsWorkerMultiplierUnavailable))]
         public int WorkerMultiplier { get; set; } = DefaultWorkerMultiplier;
+
+        /// <summary>Hides the checkbox when Change Company is not installed.</summary>
+        public bool IsChangeCompanyAbsent() => !Mod.ChangeCompanyDetected;
+
+        /// <summary>
+        /// Hides the worker capacity slider while workplaces are being left to Change Company.
+        /// See <see cref="Mod.DeferWorkersToChangeCompany"/>.
+        /// </summary>
+        public bool IsWorkerMultiplierUnavailable() => Mod.DeferWorkersToChangeCompany;
 
         [SettingsUISlider(min = MinMultiplier, max = MaxMultiplier, step = 1)]
         [SettingsUISection(kSection, kOutputGroup)]
@@ -58,6 +83,7 @@ namespace SignatureFix
             RestockTarget = DefaultRestockTarget;
             WorkerMultiplier = DefaultWorkerMultiplier;
             ProductionMultiplier = DefaultProductionMultiplier;
+            UseChangeCompanyForEmployees = DefaultUseChangeCompanyForEmployees;
         }
     }
 
@@ -82,6 +108,8 @@ namespace SignatureFix
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.MaxStorage)), "Maximum storage (tonnes)" },
                 { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.MaxStorage)), "Maximum total storage for each signature building, in tonnes. Changes apply during gameplay. Ordinary zoned commercial, office, and industrial companies are never affected." },
                 { m_Setting.GetOptionGroupLocaleID(SignatureFixSettings.kOutputGroup), "Workers and production" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.UseChangeCompanyForEmployees)), "Use Change Company for employees" },
+                { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.UseChangeCompanyForEmployees)), "You have the Change Company mod installed. The two already share workplaces safely: any building you give a Company Workplaces override in that mod is left entirely to it, and this mod's worker capacity multiplier applies only to buildings without one. Turn this on if you would rather this mod never adjusted workplaces at all, on any signature building; its worker capacity slider is then hidden. Storage, vehicles and the production multiplier are unaffected either way." },
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.WorkerMultiplier)), "Worker capacity multiplier" },
                 { m_Setting.GetOptionDescLocaleID(nameof(SignatureFixSettings.WorkerMultiplier)), "Multiplies how many workers a signature building can employ, from 1x to 10x. This raises the ceiling only; the game still hires up to what your city's labour pool and education levels can supply, and more workers also mean more output. Ordinary zoned companies are never affected." },
                 { m_Setting.GetOptionLabelLocaleID(nameof(SignatureFixSettings.ProductionMultiplier)), "Production multiplier" },

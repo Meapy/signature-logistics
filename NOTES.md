@@ -230,6 +230,63 @@ line brings the value back down on its own when the multiplier is lowered.
 `ServiceCompanyData.m_MaxWorkersPerCell`, not the process, so scaling only `IndustrialProcessData`
 left commercial signature buildings completely unaffected by the worker slider. Both are scaled now.
 
+**Write it once, not every pass.** The first version called `RaiseWorkerCeiling` on every update, so
+it re-asserted `m_MaxWorkers` every 64 frames. That is indistinguishable from a fight with any other
+mod that manages workplaces, and it broke one:
+[Change Company](https://github.com/rcav8tr/CS2Mod-ChangeCompany) has a **Company Workplaces**
+feature that overrides workplace count — explicitly including signature buildings — and documents
+that "a company workplaces override prevents this normal game logic". A player's override was
+overwritten within 64 frames and forced up to this mod's scaled ceiling, so the count skyrocketed and
+could not be changed.
+
+`Apply` now reports whether the worker multiplier just changed, and the ceiling is nudged only on
+that pass, and only when the multiplier is above 1x. At 1x this mod does not touch `m_MaxWorkers` at
+all. Afterwards the value is left alone, so another mod's override — or the game's own adjustment —
+sticks.
+
+The general rule this is an instance of: a periodic system that re-asserts a value it does not own
+will silently defeat every other mod touching that value.
+
+**"Only on transition" was the wrong correction, though.** It broke the slider. The scope is created
+in `ApplyScopedLimits`, which runs on load *and* after every save — `PreSerialize` releases every
+scope and `SignatureScopeRestoreSystem` rebuilds it — and that path called the `Apply` overload that
+discarded the change flag. So the one pass that would have written the ceiling never did, and the
+following `OnUpdate` saw a request that already matched. The prefab copy carried the scaled ceiling
+correctly; only `m_MaxWorkers` was left creeping at +1 per update.
+
+**Reading the other mod settled it.** `Systems/CompanyWorkplacesSystem.cs` in
+[Change Company](https://github.com/rcav8tr/CS2Mod-ChangeCompany) Harmony-postfixes the OnUpdate of
+`CommercialAISystem`, `ExtractorAISystem` and `IndustrialAISystem`, then runs
+`OverrideWorkplacesJob` and calls `Dependency.Complete()` so nothing can observe the AI's value first.
+Decisively, its query **requires** the mod's own `WorkplacesOverride` component:
+
+```csharp
+_companyQuery = GetEntityQuery(
+    ComponentType.ReadOnly<WorkplacesOverride>(),
+    ComponentType.ReadWrite<WorkProvider>(), ...
+```
+
+So it only touches companies the player has explicitly given an override, and never any other. There
+was no blanket conflict to solve — testing for the same component is an exact match for its scope,
+and is the same coexistence its readme describes for Realistic Workplaces and Households.
+`Mod.WorkplacesOverrideType` resolves that type by name from the loaded assemblies, and
+`ApplyWorkerCeiling` skips any company carrying it.
+
+**The reported 116 to 231 was this mod's own bug, not the other mod.** No override was set, so Change
+Company was not involved at all.
+
+**In the end, value-equality ownership was the wrong mechanism.** Remembering the exact value written and yielding whenever the live
+number differed looks reasonable and fails immediately: the company AI moves `m_MaxWorkers` by one
+every tick, so the claim was lost within a tick or two. A 10x setting stalled near 2x — the first
+value written while the slider was dragged past it, minus the AI's decrement. 232 written, 231
+observed.
+
+The rule that works is scope, not equality: skip companies the other mod has been told to manage, and
+manage the rest unconditionally. A **Use Change Company for employees** option remains for anyone who
+wants this mod out of workplaces entirely, shown only when Change Company is detected and off by
+default, gated through `Mod.DeferWorkersToChangeCompany` and applied in `ResolveBuildingScope` alone.
+Detection failure is non-fatal: if the mod list cannot be read it behaves as if absent.
+
 ## Random NullReferenceException from Colossal.Logging (issue #8)
 
 **Symptom.** An error dialog appearing at random, with the exception thrown inside

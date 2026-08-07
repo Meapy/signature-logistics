@@ -27,6 +27,7 @@ namespace SignatureFix
         private SignaturePrefabScope m_PrefabScope;
         private HashSet<Entity> m_LiveTenants;
 
+
         private const uint BankruptcyGraceFrames = 65536;
         private const int MinimumTruckFillPercent = 75;
 
@@ -164,7 +165,15 @@ namespace SignatureFix
                     buildingCount++;
                     tenantCount++;
                     m_LiveTenants.Add(company);
-                    m_PrefabScope.Apply(EntityManager, company, ResolveBuildingScope(building), ref scopedCompanies);
+                    SignaturePrefabScope.ScopeRequest loadScope = ResolveBuildingScope(building);
+                    Entity loadPrefab = m_PrefabScope.Apply(EntityManager, company, loadScope, ref scopedCompanies, out bool loadWorkerChanged);
+
+                    // This path runs on load and after every save, and it is where the scope is (re)created - so the
+                    // worker ceiling has to be applied here too. Dropping the flag here was why the slider stopped
+                    // having any effect: PreSerialize releases every scope, PostSerialize rebuilds it through this
+                    // method, and the next OnUpdate then saw a request that already matched.
+                    if (loadPrefab != Entity.Null)
+                        ApplyWorkerCeiling(company, building, loadPrefab, loadScope.m_WorkerMultiplier, loadWorkerChanged);
                 }
 
                 m_PrefabScope.ReleaseUnlisted(EntityManager, m_LiveTenants);
@@ -199,9 +208,32 @@ namespace SignatureFix
         /// <c>math.clamp</c> against the fitting-worker count (:175) brings the value back down by itself when the
         /// multiplier is reduced.
         /// </para>
+        /// <para>
+        /// <b>Skipped for any company Change Company has been told to manage.</b> That mod's
+        /// <c>OverrideWorkplacesJob</c> query requires its <c>WorkplacesOverride</c> component, so it acts only on
+        /// companies the player has explicitly given an override and leaves every other company alone. Testing for the
+        /// same component is therefore an exact match for its scope: no override means no conflict and this mod
+        /// manages the number freely; an override means the player asked that mod for a specific figure and this one
+        /// keeps out. It is the same coexistence its readme describes for Realistic Workplaces and Households.
+        /// </para>
+        /// <para>
+        /// An earlier attempt instead remembered the exact value this mod last wrote and yielded whenever the live
+        /// number differed. That failed: the company AI moves <c>m_MaxWorkers</c> by one every tick, so the claim was
+        /// lost within a tick or two and a 10x setting stalled near 2x - the first value written while the slider was
+        /// dragged past it.
+        /// </para>
         /// </summary>
-        private void RaiseWorkerCeiling(Entity company, Entity building, Entity companyPrefab)
+        private void ApplyWorkerCeiling(Entity company, Entity building, Entity companyPrefab, int workerMultiplier, bool multiplierChanged)
         {
+            // At 1x this mod has no opinion about workplaces.
+            if (workerMultiplier <= SignatureFixSettings.MinMultiplier)
+                return;
+
+            // The player gave this company an explicit workplaces override in Change Company. Theirs wins.
+            if (Mod.WorkplacesOverrideType.HasValue &&
+                EntityManager.HasComponent(company, Mod.WorkplacesOverrideType.Value))
+                return;
+
             if (!EntityManager.HasComponent<WorkProvider>(company) ||
                 !EntityManager.HasComponent<PrefabRef>(building))
                 return;
@@ -252,6 +284,12 @@ namespace SignatureFix
                 workerMultiplier = overrides.m_WorkerMultiplier;
                 productionMultiplier = overrides.m_ProductionMultiplier;
             }
+
+            // When workplaces are left to Change Company the worker multiplier is pinned to 1x here - the single place
+            // it is resolved. That leaves m_MaxWorkersPerCell unscaled and stops ApplyWorkerCeiling from writing
+            // anything, without any other code path needing to know. See Mod.DeferWorkersToChangeCompany.
+            if (Mod.DeferWorkersToChangeCompany)
+                workerMultiplier = SignatureFixSettings.MinMultiplier;
 
             return new SignaturePrefabScope.ScopeRequest(
                 Unity.Mathematics.math.clamp(maxVehicles, SignatureFixSettings.MinMaxVehicles, SignatureFixSettings.MaxMaxVehicles),
@@ -318,11 +356,11 @@ namespace SignatureFix
                     // Give this tenant a private copy of its company prefab carrying the requested limits, and read
                     // everything below from that copy. Writing the shared prefab instead is what leaked the settings
                     // to every commercial, office and industrial company using the same prefab.
-                    Entity companyPrefab = m_PrefabScope.Apply(EntityManager, company, scope, ref scopedCompanies);
+                    Entity companyPrefab = m_PrefabScope.Apply(EntityManager, company, scope, ref scopedCompanies, out bool workerScalingChanged);
                     if (companyPrefab == Entity.Null)
                         continue;
 
-                    RaiseWorkerCeiling(company, building, companyPrefab);
+                    ApplyWorkerCeiling(company, building, companyPrefab, scope.m_WorkerMultiplier, workerScalingChanged);
 
                     // This loop makes structural changes, which invalidate cached lookups. Refresh before every use.
                     deliveryTrucks.Update(this);
