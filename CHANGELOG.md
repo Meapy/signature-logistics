@@ -4,7 +4,33 @@ Full history for Signature Logistics. The `ChangeLog` field in
 `Fix-Signatures/Properties/PublishConfiguration.xml` carries only the notes for the version being
 published, so it always holds the topmost entry here and nothing else.
 
-## 1.10.0 — unreleased
+## 1.10.1 — unreleased
+
+### Fixed
+
+- **Conflict with [Change Company](https://github.com/rcav8tr/CS2Mod-ChangeCompany).** Its Company
+  Workplaces override was overwritten within 64 frames and forced up to this mod's scaled ceiling, so
+  the workplace count skyrocketed and could not be changed.
+
+  1.10.0 re-asserted `WorkProvider.m_MaxWorkers` on every update, which is indistinguishable from
+  fighting any other mod that manages workplaces.
+
+  Change Company's `OverrideWorkplacesJob` query requires its own `WorkplacesOverride` component, so
+  it only ever acts on buildings the player has explicitly given an override. This mod now skips
+  exactly those companies and manages the rest, which is the same coexistence its readme describes
+  for Realistic Workplaces and Households. Give a building a Company Workplaces override and it
+  belongs to that mod; leave it without one and the worker capacity multiplier applies.
+
+  A **Use Change Company for employees** option is also available, shown only when Change Company is
+  detected and off by default, for anyone who would rather this mod never adjusted workplaces at all.
+
+- **The worker capacity multiplier stalling well short of its setting.** A 10x setting could settle
+  near 2x. The mod was tracking the exact workplace number it had written and standing down whenever
+  the live value differed, but the company AI moves that number by one every tick, so it stood down
+  within a tick or two of the first write. Reported as a Change Company conflict, but present without
+  that mod installed.
+
+## 1.10.0
 
 ### Added
 

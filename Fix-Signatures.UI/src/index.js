@@ -14,6 +14,10 @@ const buildingLimits$ = bindValue("SignatureFix", "buildingLimits", {
   globalMaxStorage: 500,
   globalWorkerMultiplier: 1,
   globalProductionMultiplier: 1,
+  // False while workplaces are being left to Change Company, per the option of the same name. Its Company
+  // Workplaces feature owns the number in that case, so this mod hides its worker control rather than
+  // competing for it.
+  workersAvailable: true,
   minMultiplier: 1,
   maxMultiplier: 10
 });
@@ -51,6 +55,7 @@ export default function register(moduleRegistry) {
     const limits = useValue(buildingLimits$);
     const minMultiplier = limits.minMultiplier ?? 1;
     const maxMultiplier = limits.maxMultiplier ?? 10;
+    const workersAvailable = limits.workersAvailable !== false;
     const [maxVehicles, setMaxVehicles] = React.useState(limits.maxVehicles ?? 20);
     const [maxStorage, setMaxStorage] = React.useState(limits.maxStorage ?? 500);
     const [workers, setWorkers] = React.useState(limits.workerMultiplier ?? 1);
@@ -172,7 +177,7 @@ export default function register(moduleRegistry) {
             onChange: changeStorage
           })
         ),
-        expanded && React.createElement(
+        expanded && workersAvailable && React.createElement(
           InfoRow,
           {
             disableFocus: true,
@@ -180,7 +185,7 @@ export default function register(moduleRegistry) {
             right: React.createElement("span", { className: styles.limitValue }, workers + "x")
           }
         ),
-        expanded && React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
+        expanded && workersAvailable && React.createElement("div", { className: styles.sliderRow }, React.createElement(Slider, {
             value: workers,
             start: minMultiplier,
             end: maxMultiplier,

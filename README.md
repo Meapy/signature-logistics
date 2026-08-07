@@ -20,6 +20,10 @@ Open **Options > Signature Logistics** and configure:
 
 The worker multiplier raises how many people a signature building can employ. It moves the ceiling only — the game still hires against your city's labour pool and education levels, and a company the AI considers unprofitable will shed staff regardless.
 
+[Change Company](https://github.com/rcav8tr/CS2Mod-ChangeCompany) coexists cleanly. Its `OverrideWorkplacesJob` query requires that mod's own `WorkplacesOverride` component, so it acts only on buildings the player has explicitly given a Company Workplaces override. This mod skips exactly those companies and manages the rest — the same arrangement its readme describes for Realistic Workplaces and Households. Give a building an override and it belongs to Change Company; leave it without one and the worker capacity multiplier applies.
+
+An extra option, **Use Change Company for employees**, appears only when that mod is detected and is off by default. Turning it on stops this mod adjusting workplaces on any signature building and hides the worker capacity slider.
+
 The production multiplier scales throughput, not efficiency: inputs scale with output, so a 10x refinery produces 10x plastics and consumes 10x petrochemicals and chemicals. Raise the storage and vehicle limits alongside it, or the building will simply starve. The two multipliers compound, because workforce already feeds the production formula — 10x workers with 10x production is roughly 100x output.
 
 Changes save automatically, load on the next game start, and act as the defaults for existing signature buildings and buildings placed later.
@@ -93,7 +97,7 @@ docker build -t fix-signatures-ui Fix-Signatures.UI
 
 ## Publish to Paradox Mods
 
-The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.10.0`, links to the public support forum, and has no mod or DLC dependencies.
+The store metadata is in `Fix-Signatures/Properties/PublishConfiguration.xml`. Paradox Mods ID `151747` targets game version `1.6.0*`, currently publishes version `1.10.1`, links to the public support forum, and has no mod or DLC dependencies.
 
 See `PUBLISHING.md` for the full procedure and checks. In short: build a clean Release, verify the deploy folder, then call the official publisher directly on that exact folder.
 

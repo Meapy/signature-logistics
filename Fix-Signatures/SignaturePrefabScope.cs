@@ -107,6 +107,23 @@ namespace SignatureFix
         /// </summary>
         internal Entity Apply(EntityManager entityManager, Entity company, ScopeRequest request, ref int scopedCompanies)
         {
+            return Apply(entityManager, company, request, ref scopedCompanies, out _);
+        }
+
+        /// <summary>
+        /// As above, and reports through <paramref name="workerScalingChanged"/> whether the worker multiplier for this
+        /// tenant just became effective - either the scope was created or the multiplier value changed.
+        ///
+        /// <para>
+        /// The caller uses that to decide whether to nudge <c>WorkProvider.m_MaxWorkers</c> once. It must be once and
+        /// only on change: rewriting it on every pass fights anything else that manages workplaces, which is exactly
+        /// how this mod broke the Company Workplaces feature of rcav8tr's Change Company mod - that override was
+        /// overwritten within 64 frames and forced up to this mod's scaled ceiling.
+        /// </para>
+        /// </summary>
+        internal Entity Apply(EntityManager entityManager, Entity company, ScopeRequest request, ref int scopedCompanies, out bool workerScalingChanged)
+        {
+            workerScalingChanged = false;
             if (!entityManager.HasComponent<PrefabRef>(company))
                 return Entity.Null;
 
@@ -128,6 +145,7 @@ namespace SignatureFix
                 {
                     if (!request.Matches(scoped))
                     {
+                        workerScalingChanged = scoped.m_WorkerMultiplier != request.m_WorkerMultiplier;
                         scoped.m_MaxVehicles = request.m_MaxVehicles;
                         scoped.m_MaxStorage = request.m_MaxStorage;
                         scoped.m_WorkerMultiplier = request.m_WorkerMultiplier;
@@ -186,6 +204,7 @@ namespace SignatureFix
             entityManager.SetComponentData(company, new PrefabRef { m_Prefab = clone });
             m_Scoped[company] = created;
             scopedCompanies++;
+            workerScalingChanged = true;
             return clone;
         }
 
