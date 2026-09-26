@@ -4,7 +4,15 @@ Full history for Signature Logistics. The `ChangeLog` field in
 `Fix-Signatures/Properties/PublishConfiguration.xml` carries only the notes for the version being
 published, so it always holds the topmost entry here and nothing else.
 
-## 1.10.1 — unreleased
+## 1.10.2
+
+### Changed
+
+- **Compatible with every 1.6.x game version.** `GameVersion` was pinned to `1.6.0*`, so game 1.6.2
+  and later showed an incompatibility warning on the listing. It now declares `1.6.*`. No code or
+  gameplay changes.
+
+## 1.10.1
 
 ### Fixed
 

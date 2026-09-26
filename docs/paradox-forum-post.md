@@ -10,8 +10,8 @@ Live thread: https://forum.paradoxplaza.com/forum/threads/mod-signature-logistic
 
 Signature Logistics is a Cities: Skylines II code/UI mod for signature factories that spend too much time idle because of small vehicle fleets, limited storage, missing production inputs, or frequent company replacement.
 
-Current version: 1.0.6  
-Game compatibility: 1.6.0*  
+Current version: 1.10.2  
+Game compatibility: 1.6.*  
 Paradox Mods: https://mods.paradoxplaza.com/mods/151747/Windows  
 Source and issue tracker: https://github.com/Meapy/signature-logistics
 

@@ -15,8 +15,9 @@ Mod ID `151747` — https://mods.paradoxplaza.com/mods/151747/Windows
       version; the full history belongs in `CHANGELOG.md`.
 - [ ] **`ShortDescription`** is 200 characters or fewer. The publisher rejects the upload with
       "Must be a string between 1 and 200 length" rather than truncating.
-- [ ] **`GameVersion`** matches the installed game. Read it from the bottom of the main menu.
-      Currently declared as `1.6.0*`. A mismatch puts an incompatibility warning on the listing.
+- [ ] **`GameVersion`** covers the installed game. Read it from the bottom of the main menu.
+      Currently declared as `1.6.*`, which covers every 1.6.x patch. A narrower pin such as `1.6.0*`
+      flags the listing incompatible as soon as a patch ships, as 1.6.2 did.
 - [ ] **Tags** — `Code Mod` is set. Accepted tags are server-side data; validate rather than
       trusting a stale value.
 - [ ] Image filenames contain no spaces. The publisher fails with "Couldn't upload all files to the

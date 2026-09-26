@@ -65,24 +65,16 @@ Every limit is scoped to the individual signature tenant it belongs to. A signat
 	<Screenshot Value="Properties/Screenshots/building-overrides.png" />
 	<Tag Value="Code Mod" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.10.1" />
+	<ModVersion Value="1.10.2" />
 	<!--Recommended version of the base game to use the mod-->
-	<GameVersion Value="1.6.0*" />
+	<GameVersion Value="1.6.*" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<ChangeLog>
-FIXED: CONFLICT WITH CHANGE COMPANY
+COMPATIBILITY
 
-If you use the Change Company mod by rcav8tr, its Company Workplaces override was being overwritten a moment after you set it, and the workplace count was forced up to this mod's worker ceiling. The number appeared to skyrocket and could not be changed.
+Marked compatible with every 1.6.x game version, including 1.6.2. The listing previously targeted only 1.6.0, so current game builds showed an incompatibility warning even though the mod works unchanged.
 
-The two mods now share workplaces cleanly. Change Company only manages buildings you have given a Company Workplaces override, so this mod leaves exactly those alone and applies its worker capacity multiplier to the rest. Give a building an override and it belongs to Change Company; leave it without one and the multiplier applies.
-
-There is also a new option, "Use Change Company for employees", shown only when Change Company is installed and off by default, for anyone who would rather this mod never adjusted workplaces at all.
-
-ALSO FIXED
-
-The worker capacity multiplier could stall well short of its setting - a 10x setting sometimes settling near 2x. This happened with or without Change Company installed.
-
-Storage, vehicle and production settings were not affected by any of this.
+No gameplay changes.
 	</ChangeLog>
 	<!--<ChangeLog>
 	</ChangeLog>-->
